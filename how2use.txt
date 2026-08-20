@@ -1,0 +1,16 @@
+DistroKid Uploader — how to use
+===============================
+
+1. Edit upload-settings.txt once (releaser, real name, AI, credits, instrumental, prices)
+2. Run 1_install.bat once
+3. Run 2_start_chrome.bat and log into DistroKid (complete 2FA if prompted)
+4. Optional: 3_check_titles.bat
+5. Run 4_distrokid_uploader.bat (or DistroKid-Uploader.exe)
+
+If the album title already exists on DistroKid → WARNING, no overwrite
+(unless --force).
+
+After the script finishes: VERIFY the form in Chrome, then push/upload yourself
+if everything looks OK. This tool does not final-publish.
+
+More detail: docs\DISTROKID_UPLOAD.md

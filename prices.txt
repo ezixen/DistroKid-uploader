@@ -1,0 +1,4 @@
+﻿# Deprecated for DistroKid-uploader — use upload-settings.txt instead.
+# (Kept so older scripts do not break; settings are read from upload-settings.txt.)
+album=9.99
+track=0.99

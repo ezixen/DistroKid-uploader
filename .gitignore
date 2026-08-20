@@ -1,0 +1,12 @@
+﻿local-secrets/
+artifacts/
+.pytest_cache/
+__pycache__/
+*.pyc
+.env
+app/_pyi_work/
+app/_pyi_spec/
+app/_build_out/
+local-only/
+*.spec
+_last_upload_log.txt
