@@ -11,6 +11,7 @@
 - Trailing `...` in titles is **kept** (`yes, and....wav` → `yes, and...`)  
 - `_` in titles → `?`  
 - Largest `.jpg` / `.jpeg` cover  
+- Audio files are **queued quickly** into all track slots (DistroKid uploads in parallel — no per-track wait)  
 - **Never final-publish / push upload** without your review in Chrome  
 - Chrome profile: `%LOCALAPPDATA%\DistroKid-Uploader`
 

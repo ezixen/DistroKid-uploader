@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 
 
-def set_file_input_selector(cdp, selector: str, path: Path) -> dict:
+def set_file_input_selector(cdp, selector: str, path: Path, *, settle_s: float = 0.05) -> dict:
     """Set a specific file input by CSS selector (never guess by global index)."""
     doc = cdp.call("DOM.getDocument", {"depth": -1})
     root = doc["root"]["nodeId"]
@@ -25,7 +25,8 @@ def set_file_input_selector(cdp, selector: str, path: Path) -> dict:
     ) or {"ok": False}
     if not found.get("ok"):
         return found
-    time.sleep(0.6)
+    if settle_s > 0:
+        time.sleep(settle_s)
     node = cdp.call(
         "DOM.querySelector",
         {"nodeId": root, "selector": 'input[type=file][data-dk-file-target="1"]'},
@@ -43,17 +44,42 @@ def set_file_input_selector(cdp, selector: str, path: Path) -> dict:
 
 
 def set_cover_artwork(cdp, path: Path) -> dict:
-    return set_file_input_selector(cdp, "#artwork, input[type=file][name=artwork]", path)
+    return set_file_input_selector(cdp, "#artwork, input[type=file][name=artwork]", path, settle_s=0.15)
+
+
+def wait_for_track_upload_slots(cdp, n_tracks: int, *, timeout_s: float = 25.0) -> dict:
+    """Poll until DistroKid has created #js-track-upload-1..N after song-count change."""
+    n = int(n_tracks)
+    deadline = time.time() + timeout_s
+    last: dict = {"ok": False}
+    while time.time() < deadline:
+        last = cdp.evaluate(
+            f"""
+(() => {{
+  const n = {n};
+  const ids = [...document.querySelectorAll('input[type=file][id^="js-track-upload-"]')]
+    .map(e => e.id);
+  const missing = [];
+  for (let i = 1; i <= n; i++) {{
+    if (!document.getElementById('js-track-upload-' + i)) missing.push(i);
+  }}
+  return {{ok: missing.length === 0, found: ids.length, missing, ids: ids.slice(0, 20)}};
+}})()
+"""
+        ) or {"ok": False}
+        if last.get("ok"):
+            return last
+        time.sleep(0.35)
+    return {**last, "ok": False, "timeout": True, "timeout_s": timeout_s}
 
 
 def set_track_audio_file(cdp, track_1based: int, path: Path) -> dict:
     """
-    Upload audio into DistroKid's numbered track slot.
-    Must use #js-track-upload-N — NOT global file-input index (Dolby Atmos slots sit between tracks).
+    Attach audio to DistroKid's numbered track slot (#js-track-upload-N).
+    Does NOT wait for DistroKid to finish uploading — the site uploads in parallel.
     """
     n = int(track_1based)
-    selector = f'#js-track-upload-{n}'
-    # Confirm the control exists and belongs to this track number
+    selector = f"#js-track-upload-{n}"
     meta = cdp.evaluate(
         f"""
 (() => {{
@@ -63,44 +89,26 @@ def set_track_audio_file(cdp, track_1based: int, path: Path) -> dict:
     const ids = [...document.querySelectorAll('input[type=file][id^="js-track-upload-"]')].map(e => e.id);
     return {{ok:false, reason:'missing', want: 'js-track-upload-' + n, foundIds: ids}};
   }}
-  el.scrollIntoView({{block:'center', inline:'nearest'}});
-  // Nearby track header / title for sanity
-  let root = el.closest('div,section,fieldset,li') || el.parentElement;
-  let nearby = '';
-  for (let i = 0; i < 8 && root; i++) {{
-    const t = (root.innerText || '').replace(/\\s+/g, ' ').trim();
-    if (/track\\s*\\d+/i.test(t)) {{ nearby = t.slice(0, 160); break; }}
-    root = root.parentElement;
-  }}
-  return {{ok:true, id: el.id, nearby}};
+  el.scrollIntoView({{block:'nearest', inline:'nearest'}});
+  return {{ok:true, id: el.id}};
 }})()
 """
     ) or {"ok": False}
     if not meta.get("ok"):
         return meta
-    time.sleep(1.2)  # DistroKid track panels load slowly after scroll
-    put = set_file_input_selector(cdp, selector, path)
-    time.sleep(0.8)
+    put = set_file_input_selector(cdp, selector, path, settle_s=0.05)
+    # Instant check that the input accepted a file (not DistroKid upload progress)
     verify = cdp.evaluate(
         f"""
 (() => {{
-  const n = {n};
-  const el = document.querySelector('#js-track-upload-' + n);
+  const el = document.querySelector('#js-track-upload-' + {n});
   if (!el) return {{ok:false}};
-  const root = el.closest('div,section,fieldset,li') || el.parentElement;
-  const text = (root?.innerText || '').replace(/\\s+/g, ' ');
-  const want = {json.dumps(path.name)}.toLowerCase();
-  const shown = (text.match(/[\\w .'\\-]+\\.(wav|mp3|flac|m4a|aiff?|wma)/i) || [''])[0];
-  return {{
-    ok: true,
-    id: el.id,
-    shownFile: shown,
-    matchesName: want && shown.toLowerCase().includes(want.split('.').slice(0,-1).join('.').toLowerCase().slice(0, 12))
-  }};
+  const name = (el.files && el.files[0] && el.files[0].name) || '';
+  return {{ok: !!name, fileName: name}};
 }})()
 """
     ) or {}
-    return {"ok": True, "track": n, "upload": put, "verify": verify, "meta": meta}
+    return {"ok": bool(put.get("ok")), "track": n, "upload": put, "verify": verify, "meta": meta}
 
 
 def fill_songwriter_name_parts(cdp, first: str, middle: str, last: str, *, track: int = 1) -> dict:

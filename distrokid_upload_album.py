@@ -49,6 +49,7 @@ from distrokid_tracks import (
     fill_songwriter_name_parts,
     set_cover_artwork,
     set_track_audio_file,
+    wait_for_track_upload_slots,
 )
 from upload_settings import load_upload_settings
 
@@ -195,8 +196,11 @@ def fill_release_form(cdp: Cdp, folder: Path) -> int:
     print(" ", sc, flush=True)
     if not sc.get("ok"):
         raise SystemExit(f"Could not set howManySongs to {n_tracks}: {sc}")
-    print("Waiting for DistroKid to rebuild track fields…", flush=True)
-    time.sleep(8)  # DistroKid rebuilds slowly after track-count change
+    print("Waiting for DistroKid track upload slots…", flush=True)
+    slots = wait_for_track_upload_slots(cdp, n_tracks, timeout_s=25.0)
+    print(" ", slots, flush=True)
+    if not slots.get("ok"):
+        raise SystemExit(f"Track upload slots not ready for {n_tracks} songs: {slots}")
     _assert_not_2fa(cdp)
 
     # 2) All free stores + social destinations; never paid extras
@@ -241,30 +245,33 @@ def fill_release_form(cdp: Cdp, folder: Path) -> int:
     try:
         print("Upload cover…", flush=True)
         print(" ", set_cover_artwork(cdp, cover), flush=True)
-        handle_visible_popups(cdp, rounds=2)
-        time.sleep(1.0)
+        handle_visible_popups(cdp, rounds=1)
     except Exception as e:
         print(f"  cover file input: {e}", flush=True)
 
+    # DistroKid uploads in parallel — attach every file quickly, do not wait for each finish
+    print(f"Queue all {n_tracks} track audio files (parallel uploads OK)…", flush=True)
+    for i, wav in enumerate(wavs, start=1):
+        try:
+            r = set_track_audio_file(cdp, i, wav)
+            ok = r.get("ok") and (r.get("verify") or {}).get("ok", True)
+            print(f"  [{i}/{n_tracks}] {wav.name} -> {ok} {r.get('verify') or r.get('upload')}", flush=True)
+        except Exception as e:
+            print(f"  [{i}/{n_tracks}] {wav.name} warn: {e}", flush=True)
+    handle_visible_popups(cdp, rounds=1)
+
+    print("Fill per-track titles / flags (uploads may still finish in background)…", flush=True)
     for i, wav in enumerate(wavs, start=1):
         t = title_from_filename(wav.name)
-        print(f"Track {i}/{n_tracks}: title={t!r} file={wav.name}", flush=True)
-        try:
-            print("  audio:", set_track_audio_file(cdp, i, wav), flush=True)
-            handle_visible_popups(cdp, rounds=2)
-        except Exception as e:
-            print(f"  wav upload warn: {e}", flush=True)
-        time.sleep(1.0)
+        print(f"Track {i}/{n_tracks}: title={t!r}", flush=True)
         print("  title:", fill_track_song_title(cdp, i, t), flush=True)
         if s.instrumental:
             print("  instrumental:", set_track_instrumental(cdp, i, True), flush=True)
         print("  explicit:", set_explicit_lyrics(cdp, explicit=s.explicit, track_1based=i), flush=True)
         if i == 1:
-            # AI gate + modal only exist after track fields are present
             print("AI disclosure modal (apply to all songs)…", flush=True)
             print(" ", apply_ai_disclosure_modal(cdp, s), flush=True)
-            time.sleep(0.8)
-        time.sleep(1.0)
+            handle_visible_popups(cdp, rounds=2)
 
     # Re-assert Explicit=No on all tracks (guards against accidental Yes clicks)
     print(f"Explicit lyrics all tracks -> {'Yes' if s.explicit else 'No'}:", set_explicit_lyrics(cdp, explicit=s.explicit), flush=True)
