@@ -52,7 +52,8 @@ def album_title_from_folder(folder: Path) -> str:
             stem = right
     else:
         stem = re.sub(r"(?i)\bezixen\b", "", stem)
-    return re.sub(r"\s{2,}", " ", stem).strip(" -_.,")
+    # Keep "..." in album names; only trim spaces / dashes / underscores
+    return re.sub(r"\s{2,}", " ", stem).strip(" -_")
 
 
 def numbered_wavs(folder: Path) -> list[Path]:

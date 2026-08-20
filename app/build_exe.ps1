@@ -22,8 +22,10 @@ $env:PYTHONDONTWRITEBYTECODE = "1"
 & $py -c "import chrome_debug, album_media, distrokid_upload_album; print('imports OK')"
 
 $appPy = Join-Path $PSScriptRoot "distrokid_app.py"
-$prices = Join-Path $root "upload-settings.txt"
-if (-not (Test-Path $prices)) { $prices = Join-Path $root "prices.txt" }
+$settings = Join-Path $root "upload-settings.txt"
+$prices = Join-Path $root "prices.txt"
+if (-not (Test-Path $settings)) { throw "Missing upload-settings.txt" }
+if (-not (Test-Path $prices)) { throw "Missing prices.txt" }
 $outRoot = Join-Path $PSScriptRoot "_build_out"
 $distName = "DistroKid-Uploader"
 $final = Join-Path $PSScriptRoot $distName
@@ -34,7 +36,9 @@ foreach ($p in @($outRoot, $work, $spec)) {
   if (Test-Path $p) { Remove-Item $p -Recurse -Force }
 }
 
-$addData = "$prices;."
+# PyInstaller --add-data can be passed multiple times
+$addSettings = "$settings;."
+$addPrices = "$prices;."
 & $py -m PyInstaller `
   --noconfirm `
   --clean `
@@ -44,7 +48,8 @@ $addData = "$prices;."
   --distpath $outRoot `
   --workpath $work `
   --specpath $spec `
-  --add-data $addData `
+  --add-data $addSettings `
+  --add-data $addPrices `
   --hidden-import websocket `
   --hidden-import chrome_debug `
   --hidden-import album_media `
@@ -63,24 +68,34 @@ $built = Join-Path $outRoot $distName
 $outExe = Join-Path $built "DistroKid-Uploader.exe"
 if (-not (Test-Path $outExe)) { throw "Missing $outExe" }
 
+Copy-Item $settings (Join-Path $built "upload-settings.txt") -Force
 Copy-Item $prices (Join-Path $built "prices.txt") -Force
 @"
 DistroKid Uploader (EXE)
 =======================
 
-1. Double-click DistroKid-Uploader.exe
-2. Log into DistroKid in the Chrome window (once)
-3. Paste an album folder path, Enter
-4. If album title already exists → WARNING, no overwrite
-5. Review in Chrome; publish yourself
+Latest always (GitHub):
+  https://github.com/ezixen/DistroKid-uploader
+  https://github.com/ezixen/DistroKid-uploader/releases/latest
+  EXE pack: https://github.com/ezixen/DistroKid-uploader/releases/latest/download/DistroKid-Uploader-exe.zip
 
-Needs: Google Chrome.
-Chrome login: %LOCALAPPDATA%\DistroKid-Uploader\
+1. Edit upload-settings.txt in this folder (once)
+2. Double-click DistroKid-Uploader.exe
+3. Log into DistroKid in the Chrome window that opens (once; 2FA if asked)
+4. Paste an album folder path, Enter — repeat for more albums
+5. If album title already exists → WARNING, no overwrite
+6. Review the form in Chrome; you push/upload (never auto-publishes)
+
+Needs: Google Chrome installed.
+Edits: upload-settings.txt + prices.txt in this folder
+Chrome login: %LOCALAPPDATA%\DistroKid-Uploader\ (kept between runs; never beside this EXE)
+On quit: debug Chrome stops; caches/temp cleared; this folder stays deletable
 "@ | Set-Content (Join-Path $built "HOW_TO_RUN.txt") -Encoding UTF8
 
 New-Item -ItemType Directory -Force -Path $final | Out-Null
 & robocopy $built $final /E /XD local-secrets /NFL /NDL /NJH /NJS /nc /ns /np /R:2 /W:1 | Out-Null
 Copy-Item (Join-Path $built "DistroKid-Uploader.exe") (Join-Path $final "DistroKid-Uploader.exe") -Force
+Copy-Item (Join-Path $built "upload-settings.txt") (Join-Path $final "upload-settings.txt") -Force
 Copy-Item (Join-Path $built "prices.txt") (Join-Path $final "prices.txt") -Force
 Copy-Item (Join-Path $built "HOW_TO_RUN.txt") (Join-Path $final "HOW_TO_RUN.txt") -Force
 
