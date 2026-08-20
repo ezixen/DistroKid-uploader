@@ -39,6 +39,8 @@ foreach ($p in @($outRoot, $work, $spec)) {
 # PyInstaller --add-data can be passed multiple times
 $addSettings = "$settings;."
 $addPrices = "$prices;."
+$versionFile = Join-Path $PSScriptRoot "version_info.txt"
+if (-not (Test-Path $versionFile)) { throw "Missing version_info.txt" }
 & $py -m PyInstaller `
   --noconfirm `
   --clean `
@@ -48,6 +50,7 @@ $addPrices = "$prices;."
   --distpath $outRoot `
   --workpath $work `
   --specpath $spec `
+  --version-file $versionFile `
   --add-data $addSettings `
   --add-data $addPrices `
   --hidden-import websocket `
@@ -98,6 +101,10 @@ Copy-Item (Join-Path $built "DistroKid-Uploader.exe") (Join-Path $final "DistroK
 Copy-Item (Join-Path $built "upload-settings.txt") (Join-Path $final "upload-settings.txt") -Force
 Copy-Item (Join-Path $built "prices.txt") (Join-Path $final "prices.txt") -Force
 Copy-Item (Join-Path $built "HOW_TO_RUN.txt") (Join-Path $final "HOW_TO_RUN.txt") -Force
+
+# Authenticode sign as CN=ezixen (FileDescription already embeds GitHub URL via version_info.txt)
+. (Join-Path $PSScriptRoot "sign_exe.ps1")
+Invoke-EzixenSign -ExePath (Join-Path $final "DistroKid-Uploader.exe")
 
 & $py -c @"
 import sys

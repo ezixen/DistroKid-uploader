@@ -7,12 +7,7 @@ __pycache__/
 app/_pyi_work/
 app/_pyi_spec/
 app/_build_out/
+app/DistroKid-Uploader/
 local-only/
 *.spec
 _last_upload_log.txt
-
-app/DistroKid-Uploader/
-app/_build_out/
-app/_pyi_work/
-app/_pyi_spec/
-
