@@ -41,6 +41,9 @@ $addSettings = "$settings;."
 $addPrices = "$prices;."
 $versionFile = Join-Path $PSScriptRoot "version_info.txt"
 if (-not (Test-Path $versionFile)) { throw "Missing version_info.txt" }
+$iconFile = Join-Path $PSScriptRoot "uploader.ico"
+if (-not (Test-Path $iconFile)) { $iconFile = Join-Path $root "images\uploader-logo.ico" }
+if (-not (Test-Path $iconFile)) { throw "Missing uploader.ico / images\uploader-logo.ico" }
 & $py -m PyInstaller `
   --noconfirm `
   --clean `
@@ -51,6 +54,7 @@ if (-not (Test-Path $versionFile)) { throw "Missing version_info.txt" }
   --workpath $work `
   --specpath $spec `
   --version-file $versionFile `
+  --icon $iconFile `
   --add-data $addSettings `
   --add-data $addPrices `
   --hidden-import websocket `
@@ -63,6 +67,7 @@ if (-not (Test-Path $versionFile)) { throw "Missing version_info.txt" }
   --hidden-import distrokid_dialogs `
   --hidden-import distrokid_finish `
   --hidden-import upload_settings `
+  --hidden-import cdp_owned_tab `
   $appPy
 
 if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed: $LASTEXITCODE" }
