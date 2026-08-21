@@ -17,6 +17,9 @@ EASIEST (no install) — EXE
 5. Paste an album folder path, press Enter; repeat for more albums
 6. Review the form in Chrome; you push/upload
 
+You can run several DistroKid-Uploader.exe at once on the same debug Chrome:
+each instance opens its own new tab and keeps using it.
+
 Needs Google Chrome.
 Chrome login is stored in %LOCALAPPDATA%\DistroKid-Uploader\ (not in the app folder),
 so you can delete the unpacked folder anytime (any drive).

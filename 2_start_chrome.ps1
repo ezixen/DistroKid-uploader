@@ -22,7 +22,7 @@ Clear-DistroKidChromeLocks
 try {
   $null = Invoke-WebRequest -Uri "http://127.0.0.1:9222/json/version" -UseBasicParsing -TimeoutSec 2
   Write-Host "CDP already up on 9222 - using existing debug Chrome."
-  Start-Process "https://distrokid.com/dashboard"
+  Write-Host "Each uploader instance opens its own new tab(s) when it starts."
 } catch {
   Write-Host "Starting debug Chrome..."
   Write-Host "  --remote-debugging-port=9222"

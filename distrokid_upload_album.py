@@ -52,6 +52,7 @@ from distrokid_tracks import (
     wait_for_track_upload_slots,
 )
 from upload_settings import load_upload_settings
+from cdp_owned_tab import claim_tab
 
 CDP = "http://127.0.0.1:9222"
 DISTROKID_MYMUSIC = "https://distrokid.com/mymusic/"
@@ -67,15 +68,10 @@ def cdp_alive() -> bool:
 
 
 def _cdp_ws_url() -> str:
-    tabs = json.loads(urllib.request.urlopen(f"{CDP}/json/list", timeout=5).read().decode())
-    for t in tabs:
-        url = t.get("url") or ""
-        if t.get("type") == "page" and "distrokid.com" in url and t.get("webSocketDebuggerUrl"):
-            return t["webSocketDebuggerUrl"]
-    for t in tabs:
-        if t.get("type") == "page" and t.get("webSocketDebuggerUrl"):
-            return t["webSocketDebuggerUrl"]
-    raise SystemExit("No Chrome page target on CDP 9222")
+    """Open a new DistroKid tab on first use; reuse this process's tab afterward."""
+    page = claim_tab("distrokid", DISTROKID_UPLOAD, cdp=CDP)
+    print(f"Using owned DistroKid tab id={page.get('id')}", flush=True)
+    return page["webSocketDebuggerUrl"]
 
 
 class Cdp:
