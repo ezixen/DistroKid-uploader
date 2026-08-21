@@ -430,13 +430,14 @@ def apply_credits_to_tracks(cdp, s: UploadSettings, track_count: int) -> list[di
 
 
 def snapshot_form(cdp) -> dict:
+    """Page snapshot for debugging — input values are redacted (no PII in logs)."""
     return (
         cdp.evaluate(
             r"""
 (() => {
   const inputs = [...document.querySelectorAll('input,select,textarea')].slice(0,150).map(el => ({
     tag: el.tagName, type: el.type||'', name: el.name||'', id: el.id||'',
-    placeholder: el.placeholder||'', value: (el.value||'').toString().slice(0,80),
+    placeholder: el.placeholder||'', value: '***',
     checked: !!el.checked,
   }));
   return {href: location.href, title: document.title, inputCount: inputs.length, inputs,

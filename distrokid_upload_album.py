@@ -55,6 +55,9 @@ from upload_settings import load_upload_settings
 from cdp_owned_tab import claim_tab
 
 CDP = "http://127.0.0.1:9222"
+# Chrome is launched with --remote-allow-origins=CDP_ORIGIN, so the CDP
+# WebSocket handshake must send a matching Origin or Chrome answers 403.
+CDP_ORIGIN = "http://127.0.0.1"
 DISTROKID_MYMUSIC = "https://distrokid.com/mymusic/"
 DISTROKID_UPLOAD = "https://distrokid.com/new"
 
@@ -76,7 +79,9 @@ def _cdp_ws_url() -> str:
 
 class Cdp:
     def __init__(self) -> None:
-        self.ws = websocket.create_connection(_cdp_ws_url(), timeout=120)
+        self.ws = websocket.create_connection(
+            _cdp_ws_url(), timeout=120, suppress_origin=True, header=[f"Origin: {CDP_ORIGIN}"]
+        )
         self._id = 0
 
     def call(self, method: str, params: dict | None = None, timeout: float = 120) -> dict:
@@ -121,12 +126,13 @@ def preview_folder(folder: Path) -> None:
     print("Cover:", cover.name, flush=True)
     print(f"Prices: album={s.album_price}  track={s.track_price}", flush=True)
     print(f"Releaser: {s.releaser}", flush=True)
-    print(f"Real name: {s.real_name} -> {s.songwriter_parts()}", flush=True)
+    rn = (s.real_name or "").strip()
+    print(f"Real name: {'set (' + rn[:1] + '…)' if rn else 'missing'}", flush=True)
     print(f"Artist: {s.artist}", flush=True)
     print(f"Instrumental: {'on' if s.instrumental else 'off'}", flush=True)
     print(f"AI: {s.ai} (lyrics={s.ai_lyrics} music={s.ai_music} all={s.ai_all_audio} part={s.ai_part_audio} instr={s.ai_part_instruments} vocals={s.ai_part_vocals})", flush=True)
     print(f"Explicit: {'on' if s.explicit else 'off'}  Audiomack: {'on' if s.audiomack else 'off'}  Mandatory boxes: {'on' if s.mandatory_checkboxes else 'off'}", flush=True)
-    print(f"Credits: {s.credit_artist} -> {s.credit_roles}", flush=True)
+    print(f"Credits: artist set={'yes' if (s.credit_artist or '').strip() else 'no'} roles={s.credit_roles}", flush=True)
     print("Tracks:", len(wavs), flush=True)
     for w in wavs:
         print(" ", w.name, "->", title_from_filename(w.name), flush=True)

@@ -109,6 +109,14 @@ def _powershell() -> str:
     )
 
 
+def _ps_like_fragment(text: str) -> str:
+    """Sanitize a path fragment for use inside a PowerShell -like '*…*' string."""
+    out = text.replace("/", "\\")
+    for ch in ("'", "`", "$", '"', ";", "|", "&", "(", ")", "{", "}", "@"):
+        out = out.replace(ch, "")
+    return out
+
+
 def _pids_listening_on_port(port: int) -> list[int]:
     """Return PIDs with a TCP LISTENING socket on 127.0.0.1:port (netstat)."""
     try:
@@ -201,7 +209,7 @@ def stop_chrome_using_profile(profile: Path | None = None) -> int:
         "local-secrets\\chrome-debug-profile",
     ]
     likes = " -or ".join(
-        f"($_.CommandLine -like '*{m.replace(chr(39), '')}*')" for m in markers
+        f"($_.CommandLine -like '*{_ps_like_fragment(m)}*')" for m in markers
     )
     ps = f"""
 $ErrorActionPreference = 'SilentlyContinue'
@@ -304,7 +312,7 @@ def force_remove_tree(path: Path) -> bool:
     path = path.resolve()
     stop_chrome_using_profile(path if path.name == PROFILE_DIR_NAME else path / PROFILE_DIR_NAME)
     # Also stop chrome if command line mentions this exact path
-    marker = str(path).replace("/", "\\")
+    marker = _ps_like_fragment(str(path).replace("/", "\\"))
     try:
         subprocess.run(
             [
@@ -315,7 +323,7 @@ def force_remove_tree(path: Path) -> bool:
                 f"""
 $ErrorActionPreference='SilentlyContinue'
 Get-CimInstance Win32_Process | Where-Object {{
-  $_.CommandLine -and $_.CommandLine -like '*{marker.replace(chr(39),'')}*'
+  $_.CommandLine -and $_.CommandLine -like '*{marker}*'
 }} | ForEach-Object {{ Stop-Process -Id $_.ProcessId -Force }}
 """,
             ],

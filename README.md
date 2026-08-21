@@ -20,14 +20,19 @@ Same folder / filename rules as [BandCamp-uploader](https://github.com/ezixen/Ba
 ## Option A — EXE (easiest, no install)
 
 1. Unpack and open **`DistroKid-uploader/app/DistroKid-Uploader/`** (ZIP already contains the `DistroKid-uploader` folder)
-2. Edit **`upload-settings.txt`** beside the exe once (or use defaults)
+2. Edit **`upload-settings.txt`** beside the exe once (copy from `upload-settings.example.txt` if needed)
 3. Double-click **`DistroKid-Uploader.exe`**
 4. Log into DistroKid in the Chrome window that opens (once per PC; complete 2FA if asked)
 5. Paste one album folder path at a time; press Enter after each
 6. Review the filled form in Chrome — you push/upload
 
-**Several instances at once:** start debug Chrome once, then run multiple EXE/script
-processes — each opens its **own new tab** and keeps using it (same Chrome on port 9222).
+**Several instances at once (multi-album):**
+1. Start debug Chrome **once** and log into DistroKid.
+2. Run **two or more** EXE/script copies.
+3. Each copy opens a **new DistroKid tab** and keeps using only that tab.
+4. Paste a different album into each; review each tab when ready.
+
+Login cookies stay under **`%LOCALAPPDATA%\DistroKid-Uploader\`** — don’t browse untrusted sites in that Chrome; delete that folder to wipe login.
 
 Requires **Google Chrome**.  
 

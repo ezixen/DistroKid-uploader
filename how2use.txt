@@ -11,18 +11,22 @@ Latest always (GitHub):
 EASIEST (no install) — EXE
 --------------------------
 1. Unpack the ZIP → DistroKid-uploader\ folder appears
-2. Edit upload-settings.txt once (beside the exe, or in the app folder)
+2. Copy upload-settings.example.txt → upload-settings.txt and edit once
+   (beside the exe, or in the app folder). Do not commit your real legal name.
 3. Open app\DistroKid-Uploader\ and double-click DistroKid-Uploader.exe
 4. Log into DistroKid in the Chrome window (once; finish 2FA if asked)
 5. Paste an album folder path, press Enter; repeat for more albums
 6. Review the form in Chrome; you push/upload
 
 You can run several DistroKid-Uploader.exe at once on the same debug Chrome:
-each instance opens its own new tab and keeps using it.
+  1) Start Chrome / log into DistroKid once
+  2) Open multiple EXE windows
+  3) Each opens its own new DistroKid tab and keeps it
+  4) Paste a different album into each window
 
 Needs Google Chrome.
-Chrome login is stored in %LOCALAPPDATA%\DistroKid-Uploader\ (not in the app folder),
-so you can delete the unpacked folder anytime (any drive).
+Chrome login cookies live under %LOCALAPPDATA%\DistroKid-Uploader\ (not in the app folder).
+Do not browse untrusted sites in that debug Chrome. Delete that folder to wipe login.
 After each quit: caches/temp cleared; DistroKid login kept.
 
 Script path (PowerShell steps)

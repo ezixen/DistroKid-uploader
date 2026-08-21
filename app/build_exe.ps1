@@ -23,8 +23,15 @@ $env:PYTHONDONTWRITEBYTECODE = "1"
 
 $appPy = Join-Path $PSScriptRoot "distrokid_app.py"
 $settings = Join-Path $root "upload-settings.txt"
+$settingsExample = Join-Path $root "upload-settings.example.txt"
 $prices = Join-Path $root "prices.txt"
-if (-not (Test-Path $settings)) { throw "Missing upload-settings.txt" }
+# upload-settings.txt is gitignored (holds a legal name), so a fresh clone only
+# has the example. Seed it with placeholders so the EXE always ships a settings file.
+if ((-not (Test-Path $settings)) -and (Test-Path $settingsExample)) {
+  Copy-Item $settingsExample $settings
+  Write-Host "Created upload-settings.txt from upload-settings.example.txt"
+}
+if (-not (Test-Path $settings)) { throw "Missing upload-settings.txt (and upload-settings.example.txt)" }
 if (-not (Test-Path $prices)) { throw "Missing prices.txt" }
 $outRoot = Join-Path $PSScriptRoot "_build_out"
 $distName = "DistroKid-Uploader"

@@ -11,3 +11,6 @@ app/DistroKid-Uploader/
 local-only/
 *.spec
 _last_upload_log.txt
+# Personal settings (legal name). Ship upload-settings.example.txt instead.
+upload-settings.txt
+!upload-settings.example.txt

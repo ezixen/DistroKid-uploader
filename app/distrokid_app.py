@@ -84,7 +84,7 @@ def ensure_debug_chrome() -> None:
         [
             str(chrome),
             "--remote-debugging-port=9222",
-            "--remote-allow-origins=*",
+            "--remote-allow-origins=http://127.0.0.1",
             f"--user-data-dir={profile}",
             LOGIN_URL,
         ],

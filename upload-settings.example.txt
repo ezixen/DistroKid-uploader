@@ -1,0 +1,117 @@
+# DistroKid upload-settings.txt (EXAMPLE / template)
+#
+# Copy this file to upload-settings.txt next to the app, then edit it.
+# upload-settings.txt is gitignored on purpose: it holds your legal name.
+#
+#   Copy-Item upload-settings.example.txt upload-settings.txt
+#
+# Lines starting with # are comments. Keys are case-insensitive.
+#
+# ---------------------------------------------------------------------------
+# Prices
+# ---------------------------------------------------------------------------
+album=9.99
+track=0.99
+#
+# ---------------------------------------------------------------------------
+# Release identity
+# ---------------------------------------------------------------------------
+# releaser = Record label / "Released by"
+releaser=(your label)
+#
+# real_name = Legal name → split into First / Middle / Last on DistroKid
+#   Jane Q Doe  →  First=Jane  Middle=Q  Last=Doe
+# Or set: real_name_first= / real_name_middle= / real_name_last=
+# Keep your real value only in upload-settings.txt (never commit it).
+real_name=Your Legal Name
+#
+# artist = Primary artist name on the release (+ Apple Music credits name)
+artist=YourArtist
+#
+# ---------------------------------------------------------------------------
+# Track flags
+# ---------------------------------------------------------------------------
+# instrumental = on | off   (mark tracks as instrumental / no lyrics)
+instrumental=on
+#
+# explicit = on | off
+#   off (default) = Explicit lyrics → No  (use this for instrumentals)
+#   on            = Explicit lyrics → Yes
+explicit=off
+#
+# ---------------------------------------------------------------------------
+# AI disclosure (DistroKid popup: "Which parts of this song were AI-generated?")
+# ---------------------------------------------------------------------------
+# ai = off | on | both
+#   off  (code default for new users) = answer No — no AI
+#   on   = AI involved; use the ai_* flags below
+#   both = human + AI (typical "I play / AI helps") — usually ai_part_audio=on
+#
+# DistroKid popup checkboxes (only when ai=on or ai=both):
+#   ai_lyrics            = Lyrics (written by AI)
+#   ai_music             = Music (composed by AI)
+#   ai_all_audio         = All of the audio (performed by AI)
+#   ai_part_audio        = Part of the audio (performed by AI + humans)
+#   ai_part_vocals       = under Part of the audio → Vocals
+#   ai_part_instruments  = under Part of the audio → Instruments
+#   Note: DistroKid shows Vocals/Instruments as radios (one choice only).
+#   If both are on, Instruments is selected (fits instrumental releases).
+#   After Save, any leftover AI SweetAlert is force-closed before Apple credits.
+#
+# If ai_all_audio=on:
+#   ai_artist_persona = human | ai
+ai=off
+ai_lyrics=off
+ai_music=off
+ai_all_audio=off
+ai_part_audio=off
+ai_part_instruments=off
+ai_part_vocals=off
+ai_artist_persona=human
+#
+# ---------------------------------------------------------------------------
+# Apple Music credits ("Add credits for each song on this release")
+# ---------------------------------------------------------------------------
+# credit_artist = name for performer + producer fields (usually same as artist)
+credit_artist=YourArtist
+#
+# credit_roles = Performer role, Producer role (order matters)
+#   First role matching "unknown" → Performer dropdown (e.g. Unknown)
+#   First role matching "executive"/"producer" → Producer dropdown
+# Then: Copy this performer / producer to all tracks (+ confirm "Do it")
+credit_roles=Unknown, Executive producer
+#
+# ---------------------------------------------------------------------------
+# Stores / free extras
+# ---------------------------------------------------------------------------
+# stores_include_social = on | off  (IG/FB, TikTok, Snapchat destinations)
+stores_include_social=on
+#
+# audiomack = on | off
+#   on (default) = enable free Audiomack under Extras / stores
+#   Paid extras (Social Media Pack, Legacy, Discovery, Maximizer, …) are NEVER auto-on
+audiomack=on
+#
+# release_date = today | yyyy-mm-dd
+release_date=today
+#
+# ---------------------------------------------------------------------------
+# Important checkboxes (mandatory) at bottom of DistroKid form
+# ---------------------------------------------------------------------------
+# mandatory_checkboxes = on | off
+#   off (code default for new users) = leave them for the human to tick
+#   on  = auto-check YouTube note, capitalization, promo services, Snapchat
+#         rights, worldwide sales authority, artist-name rights, DistroKid agreement
+mandatory_checkboxes=off
+#
+# Genre stays manual. Album title = folder name rule (same as Bandcamp).
+#
+# ---------------------------------------------------------------------------
+# Memo / examples (commented — not active)
+# ---------------------------------------------------------------------------
+# ai=both
+# ai_part_audio=on
+# ai_part_instruments=on
+# ai_part_vocals=on
+# mandatory_checkboxes=on
+# audiomack=on
