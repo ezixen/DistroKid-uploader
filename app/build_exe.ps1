@@ -25,6 +25,8 @@ $appPy = Join-Path $PSScriptRoot "distrokid_app.py"
 $settings = Join-Path $root "upload-settings.txt"
 $settingsExample = Join-Path $root "upload-settings.example.txt"
 $prices = Join-Path $root "prices.txt"
+$disclaimer = Join-Path $root "disclaimer.txt"
+if (-not (Test-Path $disclaimer)) { throw "Missing disclaimer.txt" }
 # upload-settings.txt is gitignored (holds a legal name), so a fresh clone only
 # has the example. Seed it with placeholders so the EXE always ships a settings file.
 if ((-not (Test-Path $settings)) -and (Test-Path $settingsExample)) {
@@ -85,6 +87,7 @@ if (-not (Test-Path $outExe)) { throw "Missing $outExe" }
 
 Copy-Item $settings (Join-Path $built "upload-settings.txt") -Force
 Copy-Item $prices (Join-Path $built "prices.txt") -Force
+Copy-Item $disclaimer (Join-Path $built "disclaimer.txt") -Force
 @"
 DistroKid Uploader (EXE)
 =======================
@@ -113,6 +116,7 @@ Copy-Item (Join-Path $built "DistroKid-Uploader.exe") (Join-Path $final "DistroK
 Copy-Item (Join-Path $built "upload-settings.txt") (Join-Path $final "upload-settings.txt") -Force
 Copy-Item (Join-Path $built "prices.txt") (Join-Path $final "prices.txt") -Force
 Copy-Item (Join-Path $built "HOW_TO_RUN.txt") (Join-Path $final "HOW_TO_RUN.txt") -Force
+Copy-Item (Join-Path $built "disclaimer.txt") (Join-Path $final "disclaimer.txt") -Force
 
 # Authenticode sign as CN=ezixen (FileDescription already embeds GitHub URL via version_info.txt)
 . (Join-Path $PSScriptRoot "sign_exe.ps1")
