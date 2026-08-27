@@ -11,7 +11,7 @@
 - Trailing `...` in titles is **kept** (`yes, and....wav` → `yes, and...`)  
 - `_` in titles → `?`  
 - Largest `.jpg` / `.jpeg` cover  
-- Audio files are **queued quickly** into all track slots (DistroKid uploads in parallel — no per-track wait)  
+- Audio files are **queued quickly** into all track slots first (fire-and-forget — DistroKid uploads in the browser; we do **not** wait per-track). Titles/flags are filled **immediately after** the queue, while uploads may still run.  
 - **Never final-publish / push upload** without your review in Chrome  
 - Chrome profile: `%LOCALAPPDATA%\DistroKid-Uploader`
 
@@ -23,7 +23,9 @@ Edit `upload-settings.txt` in the DistroKid-uploader folder (also copied beside 
 |---|---|---|---|
 | `album` / `track` | Prices | `9.99` / `0.99` | |
 | `releaser` | Record label / released-by | `(ezixen) records` | Edit for your label |
-| `real_name` | Legal name → First / Middle / Last | — | Or set `real_name_first` / `_middle` / `_last` |
+| `songwriter_1` … `songwriter_N` | One **person** per line (full legal name, any word count) | — | Preferred. Spanish-style long names stay one person |
+| `songwriter_name_mode` | `auto` \| `full_first` | `auto` | `auto` = First/Middle/Last for that one person; `full_first` = entire line in First only |
+| `real_name` | Legacy single person → First / Middle / Last | — | Used only if no `songwriter_N=` lines; or `real_name_first` / `_middle` / `_last` |
 | `artist` | Primary artist (+ Apple credits name) | `ezixen` | |
 | `instrumental` | `on` \| `off` | `on` | |
 | `explicit` | `on` \| `off` | **`off`** | Instrumentals → keep off |

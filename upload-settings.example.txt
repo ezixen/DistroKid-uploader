@@ -19,11 +19,24 @@ track=0.99
 # releaser = Record label / "Released by"
 releaser=(your label)
 #
-# real_name = Legal name → split into First / Middle / Last on DistroKid
-#   Jane Q Doe  →  First=Jane  Middle=Q  Last=Doe
-# Or set: real_name_first= / real_name_middle= / real_name_last=
-# Keep your real value only in upload-settings.txt (never commit it).
-real_name=Your Legal Name
+# Songwriter(s) real name — ONE PERSON PER NUMBERED LINE
+#   The whole line is that person's legal name (any number of words).
+#   Spanish-style long names stay ONE person when they share one line.
+#
+#   songwriter_1=Maria del Carmen Garcia Lopez Ruiz
+#   songwriter_2=Jose Luis Hernandez
+#
+# songwriter_name_mode:
+#   auto       = map that one line onto DistroKid First / Middle / Last
+#                (still one person — not one word per person)
+#   full_first = put the ENTIRE line into First Name only (Middle/Last blank)
+songwriter_1=Your Legal Name
+# songwriter_2=Another Person Full Name
+songwriter_name_mode=auto
+#
+# Legacy single-person keys (used only if no songwriter_N= lines):
+# real_name=Your Legal Name
+# Or: real_name_first= / real_name_middle= / real_name_last=
 #
 # artist = Primary artist name on the release (+ Apple Music credits name)
 artist=YourArtist

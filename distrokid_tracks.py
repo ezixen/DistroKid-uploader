@@ -8,17 +8,19 @@ import time
 from pathlib import Path
 
 
-def set_file_input_selector(cdp, selector: str, path: Path, *, settle_s: float = 0.05) -> dict:
-    """Set a specific file input by CSS selector (never guess by global index)."""
-    doc = cdp.call("DOM.getDocument", {"depth": -1})
-    root = doc["root"]["nodeId"]
+def set_file_input_selector(cdp, selector: str, path: Path, *, settle_s: float = 0.0) -> dict:
+    """
+    Set a specific file input by CSS selector (never guess by global index).
+
+    Uses a shallow DOM snapshot — do NOT walk depth=-1 (that made each track
+    attach feel like a full upload wait on large DistroKid pages).
+    """
     found = cdp.evaluate(
         f"""
 (() => {{
   const el = document.querySelector({json.dumps(selector)});
   if (!el) return {{ok:false, selector: {json.dumps(selector)}}};
-  el.setAttribute('data-dk-file-target', '1');
-  el.scrollIntoView({{block:'center', inline:'nearest'}});
+  el.scrollIntoView({{block:'nearest', inline:'nearest'}});
   return {{ok:true, id: el.id||'', name: el.name||''}};
 }})()
 """
@@ -27,16 +29,11 @@ def set_file_input_selector(cdp, selector: str, path: Path, *, settle_s: float =
         return found
     if settle_s > 0:
         time.sleep(settle_s)
-    node = cdp.call(
-        "DOM.querySelector",
-        {"nodeId": root, "selector": 'input[type=file][data-dk-file-target="1"]'},
-    )
+    # depth 0 is enough: querySelector searches the whole document from root
+    doc = cdp.call("DOM.getDocument", {"depth": 0})
+    root = doc["root"]["nodeId"]
+    node = cdp.call("DOM.querySelector", {"nodeId": root, "selector": selector})
     node_id = node.get("nodeId")
-    cdp.evaluate(
-        """(() => {
-  document.querySelectorAll('input[type=file][data-dk-file-target]').forEach(el => el.removeAttribute('data-dk-file-target'));
-})()"""
-    )
     if not node_id:
         return {"ok": False, "reason": "nodeId missing", "selector": selector}
     cdp.call("DOM.setFileInputFiles", {"nodeId": node_id, "files": [str(path.resolve())]})
@@ -44,7 +41,7 @@ def set_file_input_selector(cdp, selector: str, path: Path, *, settle_s: float =
 
 
 def set_cover_artwork(cdp, path: Path) -> dict:
-    return set_file_input_selector(cdp, "#artwork, input[type=file][name=artwork]", path, settle_s=0.15)
+    return set_file_input_selector(cdp, "#artwork, input[type=file][name=artwork]", path, settle_s=0.1)
 
 
 def wait_for_track_upload_slots(cdp, n_tracks: int, *, timeout_s: float = 25.0) -> dict:
@@ -76,70 +73,160 @@ def wait_for_track_upload_slots(cdp, n_tracks: int, *, timeout_s: float = 25.0) 
 def set_track_audio_file(cdp, track_1based: int, path: Path) -> dict:
     """
     Attach audio to DistroKid's numbered track slot (#js-track-upload-N).
-    Does NOT wait for DistroKid to finish uploading — the site uploads in parallel.
+
+    Fire-and-forget: only checks that the <input> accepted a File.
+    Does NOT wait for DistroKid HTTP upload / progress bars.
     """
     n = int(track_1based)
     selector = f"#js-track-upload-{n}"
-    meta = cdp.evaluate(
-        f"""
-(() => {{
-  const n = {n};
-  const el = document.querySelector('#js-track-upload-' + n);
-  if (!el) {{
-    const ids = [...document.querySelectorAll('input[type=file][id^="js-track-upload-"]')].map(e => e.id);
-    return {{ok:false, reason:'missing', want: 'js-track-upload-' + n, foundIds: ids}};
-  }}
-  el.scrollIntoView({{block:'nearest', inline:'nearest'}});
-  return {{ok:true, id: el.id}};
-}})()
-"""
-    ) or {"ok": False}
-    if not meta.get("ok"):
-        return meta
-    put = set_file_input_selector(cdp, selector, path, settle_s=0.05)
-    # Instant check that the input accepted a file (not DistroKid upload progress)
+    put = set_file_input_selector(cdp, selector, path, settle_s=0.0)
+    if not put.get("ok"):
+        # one retry after DistroKid may have rebuilt the input
+        time.sleep(0.15)
+        put = set_file_input_selector(cdp, selector, path, settle_s=0.0)
     verify = cdp.evaluate(
         f"""
 (() => {{
   const el = document.querySelector('#js-track-upload-' + {n});
-  if (!el) return {{ok:false}};
+  if (!el) return {{ok:false, reason:'missing'}};
   const name = (el.files && el.files[0] && el.files[0].name) || '';
   return {{ok: !!name, fileName: name}};
 }})()
 """
     ) or {}
-    return {"ok": bool(put.get("ok")), "track": n, "upload": put, "verify": verify, "meta": meta}
+    return {"ok": bool(put.get("ok") and verify.get("ok")), "track": n, "upload": put, "verify": verify}
+
+
+def queue_all_track_audio(cdp, wavs: list[Path]) -> list[dict]:
+    """
+    Attach every wav into #js-track-upload-1..N as fast as possible so DistroKid
+    can upload them in parallel. Never waits on progress.
+    """
+    out: list[dict] = []
+    for i, wav in enumerate(wavs, start=1):
+        try:
+            out.append(set_track_audio_file(cdp, i, wav))
+        except Exception as e:
+            out.append({"ok": False, "track": i, "error": str(e), "file": wav.name})
+    return out
+
 
 
 def fill_songwriter_name_parts(cdp, first: str, middle: str, last: str, *, track: int = 1) -> dict:
-    """Fill DistroKid first/middle/last songwriter fields for one track (default track 1)."""
-    js = f"""
+    """Fill DistroKid first/middle/last for the first songwriter row on a track."""
+    return fill_songwriters(cdp, [(first, middle, last)], track=track)
+
+
+def fill_songwriters(
+    cdp,
+    people: list[tuple[str, str, str]],
+    *,
+    track: int = 1,
+) -> dict:
+    """
+    Fill one or more songwriter PERSONS on DistroKid track ``track``.
+
+    Each tuple is ONE person (First, Middle, Last). Extra people: click
+    DistroKid "Add another songwriter" until enough rows exist, then fill.
+    """
+    cleaned = [(f or "", m or "", l or "") for f, m, l in (people or []) if (f or m or l)]
+    if not cleaned:
+        return {"ok": False, "reason": "no-songwriters"}
+
+    steps: list[dict] = []
+    # Ensure enough rows (DOM updates after each Add click)
+    for _ in range(max(0, len(cleaned) - 1) + 3):
+        info = cdp.evaluate(
+            f"""
 (() => {{
   const track = {int(track)};
-  const first = {json.dumps(first)};
-  const middle = {json.dumps(middle)};
-  const last = {json.dumps(last)};
-  const set = (sel, value) => {{
-    const el = document.querySelector(sel);
-    if (!el) return {{ok:false, sel}};
+  const need = {len(cleaned)};
+  const listRows = () => {{
+    const firsts = [...document.querySelectorAll('input[name^="songwriter_real_name_first"]')];
+    return firsts.map(f => {{
+      const suffix = f.name.slice('songwriter_real_name_first'.length);
+      return {{
+        suffix,
+        first: f.name,
+        middle: document.querySelector('input[name="songwriter_real_name_middle' + suffix + '"]') ? true : false,
+        last: document.querySelector('input[name="songwriter_real_name_last' + suffix + '"]') ? true : false,
+      }};
+    }}).filter(r => r.middle || r.last);
+  }};
+  let rows = listRows().filter(r => r.suffix === String(track) || r.suffix.startsWith(String(track) + '_') || r.suffix.startsWith(String(track)));
+  if (!rows.length) rows = listRows();
+  if (rows.length >= need) return {{ok:true, ready:true, count: rows.length, rows}};
+  const els = [...document.querySelectorAll('span.linklike, a, button, span')];
+  const hit = els.find(el => {{
+    const t = (el.innerText || '').replace(/\\s+/g, ' ').trim().toLowerCase();
+    if (!t || t.length > 80) return false;
+    if (t.includes('copy these')) return false;
+    return (t.includes('add another') && (t.includes('songwriter') || t.includes('writer')))
+      || t === 'add another songwriter'
+      || t === 'add another';
+  }});
+  if (!hit) return {{ok:false, ready:false, count: rows.length, reason:'add-link-not-found', rows}};
+  hit.scrollIntoView({{block:'center'}});
+  hit.click();
+  return {{ok:true, ready:false, clicked:true, count: rows.length, text:(hit.innerText||'').trim().slice(0,60)}};
+}})()
+"""
+        ) or {"ok": False}
+        steps.append({"ensure": info})
+        if info.get("ready"):
+            break
+        time.sleep(0.45)
+
+    filled = cdp.evaluate(
+        f"""
+(() => {{
+  const track = {int(track)};
+  const people = {json.dumps([{"first": a, "middle": b, "last": c} for a, b, c in cleaned])};
+  const setEl = (el, value) => {{
+    if (!el) return {{ok:false}};
     el.focus();
     el.value = value;
     el.dispatchEvent(new Event('input', {{bubbles:true}}));
     el.dispatchEvent(new Event('change', {{bubbles:true}}));
     el.blur();
-    return {{ok:true, sel, value: el.value}};
+    return {{ok:true, value: el.value}};
   }};
-  // Prefer numbered fields: songwriter_real_name_first1 / middle1 / last1
-  let f = set('input[name="songwriter_real_name_first' + track + '"]', first);
-  let m = set('input[name="songwriter_real_name_middle' + track + '"]', middle);
-  let l = set('input[name="songwriter_real_name_last' + track + '"]', last);
-  if (!f.ok) f = set('input[name^=songwriter_real_name_first]', first);
-  if (!m.ok) m = set('input[name^=songwriter_real_name_middle]', middle);
-  if (!l.ok) l = set('input[name^=songwriter_real_name_last]', last);
-  return {{ok: !!(f.ok && l.ok), first: f, middle: m, last: l}};
+  const listRows = () => {{
+    const firsts = [...document.querySelectorAll('input[name^="songwriter_real_name_first"]')];
+    return firsts.map(f => {{
+      const suffix = f.name.slice('songwriter_real_name_first'.length);
+      return {{
+        suffix,
+        first: f,
+        middle: document.querySelector('input[name="songwriter_real_name_middle' + suffix + '"]'),
+        last: document.querySelector('input[name="songwriter_real_name_last' + suffix + '"]'),
+      }};
+    }}).filter(r => r.first && r.last);
+  }};
+  let rows = listRows().filter(r => r.suffix === String(track) || r.suffix.startsWith(String(track) + '_') || r.suffix.startsWith(String(track)));
+  if (!rows.length) rows = listRows();
+  // Prefer track-1 style single suffix first, then extras in DOM order
+  rows = rows.slice().sort((a, b) => {{
+    if (a.suffix === String(track)) return -1;
+    if (b.suffix === String(track)) return 1;
+    return String(a.suffix).localeCompare(String(b.suffix), undefined, {{numeric:true}});
+  }});
+  const out = [];
+  for (let i = 0; i < people.length; i++) {{
+    const p = people[i];
+    const row = rows[i];
+    if (!row) {{ out.push({{ok:false, person:i+1, reason:'row-missing'}}); continue; }}
+    const f = setEl(row.first, p.first);
+    const m = setEl(row.middle, p.middle);
+    const l = setEl(row.last, p.last);
+    out.push({{ok: !!(f.ok && l.ok), person:i+1, suffix: row.suffix, first:f, middle:m, last:l}});
+  }}
+  return {{ok: out.every(x => x.ok), count: out.length, people: out, rowCount: rows.length}};
 }})()
 """
-    return cdp.evaluate(js) or {"ok": False}
+    ) or {"ok": False}
+    return {"ok": bool(filled.get("ok")), "filled": filled, "steps": steps}
+
 
 
 def copy_songwriters_to_all_tracks(cdp) -> dict:

@@ -22,8 +22,11 @@ def _parse_roles(val: str) -> list[str]:
 
 def parse_real_name(full: str) -> tuple[str, str, str]:
     """
-    Split DistroKid songwriter real name into first / middle / last.
+    Split ONE person's legal name into DistroKid First / Middle / Last fields.
+    Still one person — never one word = one songwriter.
+
     Supports: George 'ezixen' Lawrence  →  George | ezixen | Lawrence
+    Spanish-style: Maria del Carmen Garcia Lopez → Maria | del Carmen Garcia | Lopez
     """
     raw = (full or "").strip()
     if not raw:
@@ -39,6 +42,20 @@ def parse_real_name(full: str) -> tuple[str, str, str]:
     return raw, "", ""
 
 
+def person_name_to_parts(full: str, *, mode: str = "auto") -> tuple[str, str, str]:
+    """Map one person's full name line onto DistroKid First/Middle/Last."""
+    m = (mode or "auto").strip().lower()
+    raw = (full or "").strip()
+    if not raw:
+        return "", "", ""
+    if m in {"full_first", "first", "whole", "nosplit", "no_split"}:
+        return raw, "", ""
+    return parse_real_name(raw)
+
+
+_SONGWRITER_N_RE = re.compile(r"^songwriter[_\s-]*(\d+)$", re.I)
+
+
 @dataclass
 class UploadSettings:
     album_price: str = "9.99"
@@ -48,6 +65,10 @@ class UploadSettings:
     real_name_first: str = ""
     real_name_middle: str = ""
     real_name_last: str = ""
+    # Numbered persons: songwriter_1=…, songwriter_2=… (one full name per line)
+    songwriters: list[str] = field(default_factory=list)
+    # auto = First/Middle/Last from that one line; full_first = entire line in First only
+    songwriter_name_mode: str = "auto"
     artist: str = "ezixen"
     instrumental: bool = True
     explicit: bool = False  # Explicit lyrics — default No
@@ -74,14 +95,32 @@ class UploadSettings:
     def ai_enabled(self) -> bool:
         return self.ai.strip().lower() in {"on", "both", "yes", "true"}
 
-    def songwriter_parts(self) -> tuple[str, str, str]:
+    def songwriter_people(self) -> list[tuple[str, str, str]]:
+        """
+        One DistroKid songwriter person per entry (First, Middle, Last).
+
+        Prefer numbered lines songwriter_1= / songwriter_2= …
+        (entire value = that person's name, any word count).
+        Else legacy real_name / real_name_first|middle|last (single person).
+        """
+        mode = self.songwriter_name_mode
+        if self.songwriters:
+            return [person_name_to_parts(n, mode=mode) for n in self.songwriters if (n or "").strip()]
         if self.real_name_first or self.real_name_middle or self.real_name_last:
-            return (
-                (self.real_name_first or "").strip(),
-                (self.real_name_middle or "").strip(),
-                (self.real_name_last or "").strip(),
-            )
-        return parse_real_name(self.real_name)
+            return [
+                (
+                    (self.real_name_first or "").strip(),
+                    (self.real_name_middle or "").strip(),
+                    (self.real_name_last or "").strip(),
+                )
+            ]
+        parts = person_name_to_parts(self.real_name, mode=mode)
+        return [parts] if any(parts) else []
+
+    def songwriter_parts(self) -> tuple[str, str, str]:
+        """First songwriter only (compat). Prefer songwriter_people()."""
+        people = self.songwriter_people()
+        return people[0] if people else ("", "", "")
 
     def release_date_iso(self) -> str:
         from datetime import date
@@ -105,12 +144,20 @@ def load_upload_settings(app_root: Path) -> UploadSettings:
     s = UploadSettings()
     if not path.is_file():
         return s
+    numbered: dict[int, str] = {}
     for raw in path.read_text(encoding="utf-8").splitlines():
         line = raw.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, val = line.split("=", 1)
         key, val = key.strip().lower(), val.strip()
+        m_sw = _SONGWRITER_N_RE.match(key)
+        if m_sw and val:
+            numbered[int(m_sw.group(1))] = val
+            continue
+        if key in {"songwriter_name_mode", "songwriter_split", "real_name_mode"} and val:
+            s.songwriter_name_mode = val.lower()
+            continue
         if key in {"album", "album_price"} and val:
             s.album_price = val
         elif key in {"track", "track_price"} and val:
@@ -159,6 +206,8 @@ def load_upload_settings(app_root: Path) -> UploadSettings:
             s.release_date = val or "today"
         elif key in {"mandatory_checkboxes", "important_checkboxes", "mandatory"}:
             s.mandatory_checkboxes = _truthy(val)
+    if numbered:
+        s.songwriters = [numbered[i] for i in sorted(numbered)]
     if s.ai.strip().lower() == "off":
         s.ai_lyrics = s.ai_music = s.ai_all_audio = s.ai_part_audio = False
         s.ai_part_vocals = s.ai_part_instruments = False

@@ -46,9 +46,9 @@ from distrokid_stores import (
 )
 from distrokid_tracks import (
     copy_songwriters_to_all_tracks,
-    fill_songwriter_name_parts,
+    fill_songwriters,
+    queue_all_track_audio,
     set_cover_artwork,
-    set_track_audio_file,
     wait_for_track_upload_slots,
 )
 from upload_settings import load_upload_settings
@@ -126,8 +126,15 @@ def preview_folder(folder: Path) -> None:
     print("Cover:", cover.name, flush=True)
     print(f"Prices: album={s.album_price}  track={s.track_price}", flush=True)
     print(f"Releaser: {s.releaser}", flush=True)
-    rn = (s.real_name or "").strip()
-    print(f"Real name: {'set (' + rn[:1] + '…)' if rn else 'missing'}", flush=True)
+    people = s.songwriter_people()
+    if people:
+        print(f"Songwriters: {len(people)} person(s)", flush=True)
+        for i, (f, m, l) in enumerate(people, start=1):
+            shown = " ".join(x for x in (f, m, l) if x).strip()
+            masked = (shown[:1] + "…") if shown else "(empty)"
+            print(f"  [{i}] {masked}", flush=True)
+    else:
+        print("Songwriters: missing", flush=True)
     print(f"Artist: {s.artist}", flush=True)
     print(f"Instrumental: {'on' if s.instrumental else 'off'}", flush=True)
     print(f"AI: {s.ai} (lyrics={s.ai_lyrics} music={s.ai_music} all={s.ai_all_audio} part={s.ai_part_audio} instr={s.ai_part_instruments} vocals={s.ai_part_vocals})", flush=True)
@@ -231,9 +238,11 @@ def fill_release_form(cdp: Cdp, folder: Path) -> int:
     print(" artist:", fill_by_selector(cdp, "#artistName, input[name=bandname]", s.artist), flush=True)
     print(" releaser:", fill_by_selector(cdp, "#recordLabel, input[name=recordLabel]", s.releaser), flush=True)
 
-    first, middle, last = s.songwriter_parts()
-    print(f" Songwriter real name parts: first={first!r} middle={middle!r} last={last!r}", flush=True)
-    print(" ", fill_songwriter_name_parts(cdp, first, middle, last, track=1), flush=True)
+    people = s.songwriter_people()
+    print(f" Songwriters ({len(people)} person(s)):", flush=True)
+    for i, (first, middle, last) in enumerate(people, start=1):
+        print(f"  [{i}] first={first!r} middle={middle!r} last={last!r}", flush=True)
+    print(" ", fill_songwriters(cdp, people, track=1), flush=True)
     time.sleep(0.8)
     print(" Copy songwriters to all tracks (+ Do it confirm):", copy_songwriters_to_all_tracks(cdp), flush=True)
     time.sleep(1.0)
@@ -251,18 +260,24 @@ def fill_release_form(cdp: Cdp, folder: Path) -> int:
     except Exception as e:
         print(f"  cover file input: {e}", flush=True)
 
-    # DistroKid uploads in parallel — attach every file quickly, do not wait for each finish
-    print(f"Queue all {n_tracks} track audio files (parallel uploads OK)…", flush=True)
-    for i, wav in enumerate(wavs, start=1):
-        try:
-            r = set_track_audio_file(cdp, i, wav)
-            ok = r.get("ok") and (r.get("verify") or {}).get("ok", True)
-            print(f"  [{i}/{n_tracks}] {wav.name} -> {ok} {r.get('verify') or r.get('upload')}", flush=True)
-        except Exception as e:
-            print(f"  [{i}/{n_tracks}] {wav.name} warn: {e}", flush=True)
+    # Phase A — attach EVERY wav as fast as possible (no progress waits).
+    # DistroKid then uploads in the browser; Python must not wait per track.
+    print(
+        f"Queue all {n_tracks} track files NOW (fire-and-forget — not waiting on DistroKid progress)…",
+        flush=True,
+    )
+    queued = queue_all_track_audio(cdp, wavs)
+    for i, (wav, r) in enumerate(zip(wavs, queued), start=1):
+        ok = bool(r.get("ok"))
+        detail = r.get("verify") or r.get("upload") or r
+        print(f"  queued [{i}/{n_tracks}] {wav.name} -> {ok} {detail}", flush=True)
     handle_visible_popups(cdp, rounds=1)
 
-    print("Fill per-track titles / flags (uploads may still finish in background)…", flush=True)
+    # Phase B — titles/flags immediately while DistroKid uploads continue in background.
+    print(
+        "Fill titles / flags NOW (do not wait for uploads to finish)…",
+        flush=True,
+    )
     for i, wav in enumerate(wavs, start=1):
         t = title_from_filename(wav.name)
         print(f"Track {i}/{n_tracks}: title={t!r}", flush=True)
@@ -270,10 +285,10 @@ def fill_release_form(cdp: Cdp, folder: Path) -> int:
         if s.instrumental:
             print("  instrumental:", set_track_instrumental(cdp, i, True), flush=True)
         print("  explicit:", set_explicit_lyrics(cdp, explicit=s.explicit, track_1based=i), flush=True)
-        if i == 1:
-            print("AI disclosure modal (apply to all songs)…", flush=True)
-            print(" ", apply_ai_disclosure_modal(cdp, s), flush=True)
-            handle_visible_popups(cdp, rounds=2)
+
+    print("AI disclosure modal (apply to all songs)…", flush=True)
+    print(" ", apply_ai_disclosure_modal(cdp, s), flush=True)
+    handle_visible_popups(cdp, rounds=2)
 
     # Re-assert Explicit=No on all tracks (guards against accidental Yes clicks)
     print(f"Explicit lyrics all tracks -> {'Yes' if s.explicit else 'No'}:", set_explicit_lyrics(cdp, explicit=s.explicit), flush=True)

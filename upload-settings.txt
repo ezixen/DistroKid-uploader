@@ -18,10 +18,15 @@ track=0.99
 # releaser = Record label / "Released by"
 releaser=(your label)
 #
-# real_name = Legal name → split into First / Middle / Last on DistroKid
-#   Jane Q Doe  →  First=Jane  Middle=Q  Last=Doe
-# Or set: real_name_first= / real_name_middle= / real_name_last=
-real_name=Your Legal Name
+# Songwriter(s) — ONE PERSON PER NUMBERED LINE (any number of name words)
+#   songwriter_1=Maria del Carmen Garcia Lopez Ruiz
+#   songwriter_2=Jose Luis Hernandez
+# songwriter_name_mode=auto | full_first
+songwriter_1=Your Legal Name
+# songwriter_2=Another Person Full Name
+songwriter_name_mode=auto
+#
+# Legacy (only if no songwriter_N= lines): real_name= / real_name_first|middle|last=
 #
 # artist = Primary artist name on the release (+ Apple Music credits name)
 artist=YourArtist
