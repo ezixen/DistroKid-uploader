@@ -26,7 +26,13 @@ Edit `upload-settings.txt` in the DistroKid-uploader folder (also copied beside 
 | `songwriter_1` … `songwriter_N` | One **person** per line (full legal name, any word count) | — | Preferred. Spanish-style long names stay one person |
 | `songwriter_name_mode` | `auto` \| `full_first` | `auto` | `auto` = First/Middle/Last for that one person; `full_first` = entire line in First only |
 | `real_name` | Legacy single person → First / Middle / Last | — | Used only if no `songwriter_N=` lines; or `real_name_first` / `_middle` / `_last` |
-| `artist` | Primary artist (+ Apple credits name) | `ezixen` | |
+| `artist` | Primary artist (+ Apple credits fallback name) | `ezixen` | |
+| `player_1` … / `performer_1` … | Apple Music **performer** rows (one person per line) | falls back to `credit_artist` / `artist` | Aliases: `instrument_player_N` |
+| `producer_1` … `producer_N` | Apple Music **producer** rows (one person per line) | falls back to `credit_artist` / `artist` | |
+| `player_role` / `performer_role` | Performer dropdown role | `Unknown` | |
+| `producer_role` | Producer dropdown role | `Executive producer` | |
+| `credit_artist` | Legacy single credit name | = `artist` | Used when no numbered players/producers |
+| `credit_roles` | Legacy role list | `Unknown, Executive producer` | Still used to infer roles if `player_role` / `producer_role` omitted |
 | `instrumental` | `on` \| `off` | `on` | |
 | `explicit` | `on` \| `off` | **`off`** | Instrumentals → keep off |
 | `ai` | `off` \| `on` \| `both` | **`off`** | See AI section below |
@@ -39,11 +45,8 @@ Edit `upload-settings.txt` in the DistroKid-uploader folder (also copied beside 
 | `ai_artist_persona` | `human` \| `ai` | `human` | If all audio |
 | `audiomack` | Free Audiomack extra | **`on`** | Paid extras stay off |
 | `mandatory_checkboxes` | Bottom “Important” boxes | **`off`** | Set `on` only if you want them ticked |
-| `credit_artist` | Apple Music credit name | = `artist` | |
-| `credit_performer_role` | Performer role dropdown | `Unknown` | |
-| `credit_producer_role` | Producer role dropdown | `Executive producer` | |
 
-**Always auto:** album title from folder; songwriter first/middle/last + **Copy to all tracks** (confirms “Do it” / OK popups); all free stores ON (including social + Roblox/Snapchat); store eligibility popups; DistroKid distribution terms; **release date = today**; audio into `#js-track-upload-N` (never Dolby Atmos slots); Apple Music performer + producer + copy to all.
+**Always auto:** album title from folder; numbered songwriters + **Copy to all tracks**; numbered Apple Music performers/producers + copy to all (confirms “Do it” / OK); all free stores ON (including social + Roblox/Snapchat); store eligibility popups; DistroKid distribution terms; **release date = today**; audio into `#js-track-upload-N` (never Dolby Atmos slots).
 
 **Never auto:** paid extras (Leave a Legacy, Discovery Pack, Store Maximizer, DistroVid, Loudness Normalization, Social Media Pack, etc.), genre — set those yourself if needed. **Never final-publish.**
 

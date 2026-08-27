@@ -1,9 +1,8 @@
 """
 Load DistroKid upload-settings.txt (replaces prices.txt for this app).
 
-Code defaults (no file / missing keys) are safe for new users:
-  ai=off, mandatory_checkboxes=off, explicit=off, audiomack=on
-Your checked-in upload-settings.txt can override for your own releases.
+Code defaults match shipped upload-settings.txt (ezixen releases).
+If upload-settings.txt is missing, copy upload-settings.example.txt first.
 """
 from __future__ import annotations
 
@@ -54,6 +53,11 @@ def person_name_to_parts(full: str, *, mode: str = "auto") -> tuple[str, str, st
 
 
 _SONGWRITER_N_RE = re.compile(r"^songwriter[_\s-]*(\d+)$", re.I)
+_PRODUCER_N_RE = re.compile(r"^producer[_\s-]*(\d+)$", re.I)
+_PLAYER_N_RE = re.compile(
+    r"^(?:player|performer|instrument_player|instrumentplayer)[_\s-]*(\d+)$",
+    re.I,
+)
 
 
 @dataclass
@@ -61,12 +65,12 @@ class UploadSettings:
     album_price: str = "9.99"
     track_price: str = "0.99"
     releaser: str = "(ezixen) records"
-    real_name: str = "George 'ezixen' Lawrence"
+    real_name: str = "George ezixen Lawrence"
     real_name_first: str = ""
     real_name_middle: str = ""
     real_name_last: str = ""
     # Numbered persons: songwriter_1=…, songwriter_2=… (one full name per line)
-    songwriters: list[str] = field(default_factory=list)
+    songwriters: list[str] = field(default_factory=lambda: ["George ezixen Lawrence"])
     # auto = First/Middle/Last from that one line; full_first = entire line in First only
     songwriter_name_mode: str = "auto"
     artist: str = "ezixen"
@@ -77,23 +81,38 @@ class UploadSettings:
     ai_lyrics: bool = False
     ai_music: bool = False
     ai_all_audio: bool = False
-    ai_part_audio: bool = False
+    ai_part_audio: bool = True
     ai_part_vocals: bool = False
-    ai_part_instruments: bool = False
+    ai_part_instruments: bool = True
     ai_artist_persona: str = "human"  # human | ai
     credit_artist: str = "ezixen"
     credit_roles: list[str] = field(
         default_factory=lambda: ["Unknown", "Executive producer"]
     )
+    # Numbered Apple credits (one person per line — full name, any word count)
+    producers: list[str] = field(default_factory=lambda: ["ezixen"])
+    players: list[str] = field(default_factory=lambda: ["ezixen"])  # instrument / performer
+    producer_role: str = ""  # default resolved from credit_roles / Executive producer
+    player_role: str = ""  # default resolved from credit_roles / Unknown
     stores_include_social: bool = True
     audiomack: bool = True  # free extra — on by default
     release_date: str = "today"
-    # Bottom "Important checkboxes (mandatory)" — default OFF for users
-    mandatory_checkboxes: bool = False
+    mandatory_checkboxes: bool = True
 
     @property
     def ai_enabled(self) -> bool:
-        return self.ai.strip().lower() in {"on", "both", "yes", "true"}
+        if self.ai.strip().lower() in {"on", "both", "yes", "true"}:
+            return True
+        return any(
+            (
+                self.ai_lyrics,
+                self.ai_music,
+                self.ai_all_audio,
+                self.ai_part_audio,
+                self.ai_part_vocals,
+                self.ai_part_instruments,
+            )
+        )
 
     def songwriter_people(self) -> list[tuple[str, str, str]]:
         """
@@ -122,6 +141,40 @@ class UploadSettings:
         people = self.songwriter_people()
         return people[0] if people else ("", "", "")
 
+    def _legacy_credit_name(self) -> str:
+        return (self.credit_artist or self.artist or "").strip()
+
+    def producer_names(self) -> list[str]:
+        """Apple Music producer display names (one person per entry)."""
+        if self.producers:
+            return [n.strip() for n in self.producers if (n or "").strip()]
+        name = self._legacy_credit_name()
+        return [name] if name else []
+
+    def player_names(self) -> list[str]:
+        """Apple Music performer / instrument-player display names."""
+        if self.players:
+            return [n.strip() for n in self.players if (n or "").strip()]
+        name = self._legacy_credit_name()
+        return [name] if name else []
+
+    def resolved_producer_role(self) -> str:
+        if (self.producer_role or "").strip():
+            return self.producer_role.strip()
+        roles = list(self.credit_roles or [])
+        hit = next((r for r in roles if r.lower().strip() == "executive producer"), None)
+        if hit:
+            return hit
+        hit = next((r for r in roles if "executive" in r.lower() or "producer" in r.lower()), None)
+        return hit or "Executive producer"
+
+    def resolved_player_role(self) -> str:
+        if (self.player_role or "").strip():
+            return self.player_role.strip()
+        roles = list(self.credit_roles or [])
+        hit = next((r for r in roles if "unknown" in r.lower()), None)
+        return hit or "Unknown"
+
     def release_date_iso(self) -> str:
         from datetime import date
 
@@ -144,7 +197,11 @@ def load_upload_settings(app_root: Path) -> UploadSettings:
     s = UploadSettings()
     if not path.is_file():
         return s
-    numbered: dict[int, str] = {}
+    numbered_sw: dict[int, str] = {}
+    numbered_prod: dict[int, str] = {}
+    numbered_play: dict[int, str] = {}
+    explicit_ai: set[str] = set()
+    saw_real_name = False
     for raw in path.read_text(encoding="utf-8").splitlines():
         line = raw.strip()
         if not line or line.startswith("#") or "=" not in line:
@@ -153,7 +210,15 @@ def load_upload_settings(app_root: Path) -> UploadSettings:
         key, val = key.strip().lower(), val.strip()
         m_sw = _SONGWRITER_N_RE.match(key)
         if m_sw and val:
-            numbered[int(m_sw.group(1))] = val
+            numbered_sw[int(m_sw.group(1))] = val
+            continue
+        m_pr = _PRODUCER_N_RE.match(key)
+        if m_pr and val:
+            numbered_prod[int(m_pr.group(1))] = val
+            continue
+        m_pl = _PLAYER_N_RE.match(key)
+        if m_pl and val:
+            numbered_play[int(m_pl.group(1))] = val
             continue
         if key in {"songwriter_name_mode", "songwriter_split", "real_name_mode"} and val:
             s.songwriter_name_mode = val.lower()
@@ -166,6 +231,7 @@ def load_upload_settings(app_root: Path) -> UploadSettings:
             s.releaser = val
         elif key in {"real_name", "legal_name", "fullname_name"} and val:
             s.real_name = val
+            saw_real_name = True
         elif key in {"real_name_first", "first_name"} and val:
             s.real_name_first = val
         elif key in {"real_name_middle", "middle_name"} and val:
@@ -180,24 +246,35 @@ def load_upload_settings(app_root: Path) -> UploadSettings:
             s.explicit = _truthy(val)
         elif key == "ai":
             s.ai = val.lower()
+            explicit_ai.add("ai")
         elif key == "ai_lyrics":
             s.ai_lyrics = _truthy(val)
+            explicit_ai.add("ai_lyrics")
         elif key == "ai_music":
             s.ai_music = _truthy(val)
+            explicit_ai.add("ai_music")
         elif key == "ai_all_audio":
             s.ai_all_audio = _truthy(val)
+            explicit_ai.add("ai_all_audio")
         elif key == "ai_part_audio":
             s.ai_part_audio = _truthy(val)
+            explicit_ai.add("ai_part_audio")
         elif key == "ai_part_vocals":
             s.ai_part_vocals = _truthy(val)
+            explicit_ai.add("ai_part_vocals")
         elif key == "ai_part_instruments":
             s.ai_part_instruments = _truthy(val)
+            explicit_ai.add("ai_part_instruments")
         elif key in {"ai_artist_persona", "ai_persona"}:
             s.ai_artist_persona = val.lower()
         elif key in {"credit_artist", "contributor", "contributing_artist"} and val:
             s.credit_artist = val
         elif key in {"credit_roles", "roles"} and val:
             s.credit_roles = _parse_roles(val)
+        elif key in {"producer_role", "credit_producer_role"} and val:
+            s.producer_role = val
+        elif key in {"player_role", "performer_role", "credit_performer_role"} and val:
+            s.player_role = val
         elif key in {"stores_include_social", "include_social"}:
             s.stores_include_social = _truthy(val)
         elif key == "audiomack":
@@ -206,9 +283,30 @@ def load_upload_settings(app_root: Path) -> UploadSettings:
             s.release_date = val or "today"
         elif key in {"mandatory_checkboxes", "important_checkboxes", "mandatory"}:
             s.mandatory_checkboxes = _truthy(val)
-    if numbered:
-        s.songwriters = [numbered[i] for i in sorted(numbered)]
+    if numbered_sw:
+        s.songwriters = [numbered_sw[i] for i in sorted(numbered_sw)]
+    elif saw_real_name and s.real_name.strip():
+        s.songwriters = [s.real_name.strip()]
+    if numbered_prod:
+        s.producers = [numbered_prod[i] for i in sorted(numbered_prod)]
+    if numbered_play:
+        s.players = [numbered_play[i] for i in sorted(numbered_play)]
     if s.ai.strip().lower() == "off":
-        s.ai_lyrics = s.ai_music = s.ai_all_audio = s.ai_part_audio = False
-        s.ai_part_vocals = s.ai_part_instruments = False
+        explicit_part = bool(
+            explicit_ai
+            & {
+                "ai_lyrics",
+                "ai_music",
+                "ai_all_audio",
+                "ai_part_audio",
+                "ai_part_vocals",
+                "ai_part_instruments",
+            }
+        )
+        if explicit_part:
+            # ai=off but explicit ai_* flags in file → still disclose Yes + selected parts
+            s.ai = "both"
+        else:
+            s.ai_lyrics = s.ai_music = s.ai_all_audio = s.ai_part_audio = False
+            s.ai_part_vocals = s.ai_part_instruments = False
     return s

@@ -1,8 +1,6 @@
-# DistroKid upload-settings.txt (EXAMPLE / template)
+# DistroKid upload-settings.txt (EXAMPLE / shipped defaults)
 #
-# Copy this file to upload-settings.txt next to the app, then edit it.
-# upload-settings.txt is gitignored on purpose: it holds your legal name.
-#
+# Copy to upload-settings.txt next to the app if missing. Edit anytime.
 #   Copy-Item upload-settings.example.txt upload-settings.txt
 #
 # Lines starting with # are comments. Keys are case-insensitive.
@@ -16,115 +14,61 @@ track=0.99
 # ---------------------------------------------------------------------------
 # Release identity
 # ---------------------------------------------------------------------------
-# releaser = Record label / "Released by"
-releaser=(your label)
+releaser=(ezixen) records
 #
-# Songwriter(s) real name — ONE PERSON PER NUMBERED LINE
-#   The whole line is that person's legal name (any number of words).
-#   Spanish-style long names stay ONE person when they share one line.
-#
-#   songwriter_1=Maria del Carmen Garcia Lopez Ruiz
-#   songwriter_2=Jose Luis Hernandez
-#
-# songwriter_name_mode:
-#   auto       = map that one line onto DistroKid First / Middle / Last
-#                (still one person — not one word per person)
-#   full_first = put the ENTIRE line into First Name only (Middle/Last blank)
-songwriter_1=Your Legal Name
+# Songwriter(s) — ONE PERSON PER NUMBERED LINE (full legal name, any word count)
+#   songwriter_1=Maria del Carmen Garcia Lopez Ruiz  → still ONE person
+# songwriter_name_mode: auto | full_first
+songwriter_1=George ezixen Lawrence
 # songwriter_2=Another Person Full Name
 songwriter_name_mode=auto
 #
-# Legacy single-person keys (used only if no songwriter_N= lines):
-# real_name=Your Legal Name
-# Or: real_name_first= / real_name_middle= / real_name_last=
-#
-# artist = Primary artist name on the release (+ Apple Music credits name)
-artist=YourArtist
+# artist = Primary artist (+ Apple credits fallback when no player_N= / producer_N=)
+artist=ezixen
 #
 # ---------------------------------------------------------------------------
 # Track flags
 # ---------------------------------------------------------------------------
-# instrumental = on | off   (mark tracks as instrumental / no lyrics)
 instrumental=on
-#
-# explicit = on | off
-#   off (default) = Explicit lyrics → No  (use this for instrumentals)
-#   on            = Explicit lyrics → Yes
 explicit=off
 #
 # ---------------------------------------------------------------------------
-# AI disclosure (DistroKid popup: "Which parts of this song were AI-generated?")
+# AI disclosure
 # ---------------------------------------------------------------------------
 # ai = off | on | both
-#   off  (code default for new users) = answer No — no AI
-#   on   = AI involved; use the ai_* flags below
-#   both = human + AI (typical "I play / AI helps") — usually ai_part_audio=on
-#
-# DistroKid popup checkboxes (only when ai=on or ai=both):
-#   ai_lyrics            = Lyrics (written by AI)
-#   ai_music             = Music (composed by AI)
-#   ai_all_audio         = All of the audio (performed by AI)
-#   ai_part_audio        = Part of the audio (performed by AI + humans)
-#   ai_part_vocals       = under Part of the audio → Vocals
-#   ai_part_instruments  = under Part of the audio → Instruments
-#   Note: DistroKid shows Vocals/Instruments as radios (one choice only).
-#   If both are on, Instruments is selected (fits instrumental releases).
-#   After Save, any leftover AI SweetAlert is force-closed before Apple credits.
-#
-# If ai_all_audio=on:
-#   ai_artist_persona = human | ai
+# If ai_part_audio / ai_part_instruments / … are on while ai=off, uploader still answers Yes
+# and selects Part of the audio (same as ai=both for instrumentals).
 ai=off
 ai_lyrics=off
 ai_music=off
 ai_all_audio=off
-ai_part_audio=off
-ai_part_instruments=off
+ai_part_audio=on
+ai_part_instruments=on
 ai_part_vocals=off
 ai_artist_persona=human
 #
 # ---------------------------------------------------------------------------
-# Apple Music credits ("Add credits for each song on this release")
+# Apple Music credits
 # ---------------------------------------------------------------------------
-# credit_artist = name for performer + producer fields (usually same as artist)
-credit_artist=YourArtist
-#
-# credit_roles = Performer role, Producer role (order matters)
-#   First role matching "unknown" → Performer dropdown (e.g. Unknown)
-#   First role matching "executive"/"producer" → Producer dropdown
-# Then: Copy this performer / producer to all tracks (+ confirm "Do it")
+player_1=ezixen
+# player_2=Another Performer Full Name
+producer_1=ezixen
+# producer_2=Another Producer Full Name
+player_role=Unknown
+producer_role=Executive producer
+credit_artist=ezixen
 credit_roles=Unknown, Executive producer
 #
 # ---------------------------------------------------------------------------
 # Stores / free extras
 # ---------------------------------------------------------------------------
-# stores_include_social = on | off  (IG/FB, TikTok, Snapchat destinations)
 stores_include_social=on
-#
-# audiomack = on | off
-#   on (default) = enable free Audiomack under Extras / stores
-#   Paid extras (Social Media Pack, Legacy, Discovery, Maximizer, …) are NEVER auto-on
 audiomack=on
-#
-# release_date = today | yyyy-mm-dd
 release_date=today
 #
 # ---------------------------------------------------------------------------
-# Important checkboxes (mandatory) at bottom of DistroKid form
+# Important checkboxes (mandatory)
 # ---------------------------------------------------------------------------
-# mandatory_checkboxes = on | off
-#   off (code default for new users) = leave them for the human to tick
-#   on  = auto-check YouTube note, capitalization, promo services, Snapchat
-#         rights, worldwide sales authority, artist-name rights, DistroKid agreement
-mandatory_checkboxes=off
+mandatory_checkboxes=on
 #
 # Genre stays manual. Album title = folder name rule (same as Bandcamp).
-#
-# ---------------------------------------------------------------------------
-# Memo / examples (commented — not active)
-# ---------------------------------------------------------------------------
-# ai=both
-# ai_part_audio=on
-# ai_part_instruments=on
-# ai_part_vocals=on
-# mandatory_checkboxes=on
-# audiomack=on

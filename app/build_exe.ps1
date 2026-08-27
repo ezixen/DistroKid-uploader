@@ -75,6 +75,7 @@ if (-not (Test-Path $iconFile)) { throw "Missing uploader.ico / images\uploader-
   --hidden-import distrokid_tracks `
   --hidden-import distrokid_dialogs `
   --hidden-import distrokid_finish `
+  --hidden-import distrokid_credits `
   --hidden-import upload_settings `
   --hidden-import cdp_owned_tab `
   $appPy

@@ -140,6 +140,12 @@ def preview_folder(folder: Path) -> None:
     print(f"AI: {s.ai} (lyrics={s.ai_lyrics} music={s.ai_music} all={s.ai_all_audio} part={s.ai_part_audio} instr={s.ai_part_instruments} vocals={s.ai_part_vocals})", flush=True)
     print(f"Explicit: {'on' if s.explicit else 'off'}  Audiomack: {'on' if s.audiomack else 'off'}  Mandatory boxes: {'on' if s.mandatory_checkboxes else 'off'}", flush=True)
     print(f"Credits: artist set={'yes' if (s.credit_artist or '').strip() else 'no'} roles={s.credit_roles}", flush=True)
+    print(f"  players/performers ({len(s.player_names())}): {len(s.player_names())}  role={s.resolved_player_role()!r}", flush=True)
+    for i, n in enumerate(s.player_names(), start=1):
+        print(f"    player_{i}={n[:1] + '…' if n else '(empty)'}", flush=True)
+    print(f"  producers ({len(s.producer_names())}): role={s.resolved_producer_role()!r}", flush=True)
+    for i, n in enumerate(s.producer_names(), start=1):
+        print(f"    producer_{i}={n[:1] + '…' if n else '(empty)'}", flush=True)
     print("Tracks:", len(wavs), flush=True)
     for w in wavs:
         print(" ", w.name, "->", title_from_filename(w.name), flush=True)

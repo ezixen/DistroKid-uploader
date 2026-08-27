@@ -1,9 +1,7 @@
 # DistroKid upload-settings.txt
-# One-time settings for DistroKid-uploader (edit anytime; read on every run).
+# Shipped defaults for ezixen releases (edit anytime; read on every run).
 #
-# This file is gitignored — it holds your legal name, so it never leaves your PC.
 # Template with all options + comments: upload-settings.example.txt
-#
 # Lines starting with # are comments. Keys are case-insensitive.
 #
 # ---------------------------------------------------------------------------
@@ -15,50 +13,42 @@ track=0.99
 # ---------------------------------------------------------------------------
 # Release identity
 # ---------------------------------------------------------------------------
-# releaser = Record label / "Released by"
-releaser=(your label)
+releaser=(ezixen) records
 #
 # Songwriter(s) — ONE PERSON PER NUMBERED LINE (any number of name words)
-#   songwriter_1=Maria del Carmen Garcia Lopez Ruiz
-#   songwriter_2=Jose Luis Hernandez
-# songwriter_name_mode=auto | full_first
-songwriter_1=Your Legal Name
-# songwriter_2=Another Person Full Name
+songwriter_1=George ezixen Lawrence
 songwriter_name_mode=auto
 #
-# Legacy (only if no songwriter_N= lines): real_name= / real_name_first|middle|last=
-#
-# artist = Primary artist name on the release (+ Apple Music credits name)
-artist=YourArtist
+# artist = Primary artist name on the release (+ Apple Music credits fallback)
+artist=ezixen
 #
 # ---------------------------------------------------------------------------
 # Track flags
 # ---------------------------------------------------------------------------
-# instrumental = on | off   (mark tracks as instrumental / no lyrics)
 instrumental=on
-#
-# explicit = on | off
-#   off (default) = Explicit lyrics → No  (use this for instrumentals)
-#   on            = Explicit lyrics → Yes
 explicit=off
 #
 # ---------------------------------------------------------------------------
-# AI disclosure (DistroKid popup: "Which parts of this song were AI-generated?")
+# AI disclosure (DistroKid popup)
 # ---------------------------------------------------------------------------
-# ai = off | on | both   (see upload-settings.example.txt for every ai_* flag)
+# ai=off with ai_part_*=on still opens Yes + Part of the audio (loader treats as both)
 ai=off
 ai_lyrics=off
 ai_music=off
 ai_all_audio=off
-ai_part_audio=off
-ai_part_instruments=off
+ai_part_audio=on
+ai_part_instruments=on
 ai_part_vocals=off
 ai_artist_persona=human
 #
 # ---------------------------------------------------------------------------
-# Apple Music credits ("Add credits for each song on this release")
+# Apple Music credits
 # ---------------------------------------------------------------------------
-credit_artist=YourArtist
+player_1=ezixen
+producer_1=ezixen
+player_role=Unknown
+producer_role=Executive producer
+credit_artist=ezixen
 credit_roles=Unknown, Executive producer
 #
 # ---------------------------------------------------------------------------
@@ -69,9 +59,8 @@ audiomack=on
 release_date=today
 #
 # ---------------------------------------------------------------------------
-# Important checkboxes (mandatory) at bottom of DistroKid form
+# Important checkboxes (mandatory)
 # ---------------------------------------------------------------------------
-# off = leave them for the human to tick
-mandatory_checkboxes=off
+mandatory_checkboxes=on
 #
 # Genre stays manual. Album title = folder name rule (same as Bandcamp).
