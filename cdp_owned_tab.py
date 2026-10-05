@@ -20,6 +20,15 @@ _lock = threading.Lock()
 _owned_ids: dict[str, str] = {}
 
 
+def url_host_matches(url: str, domain: str) -> bool:
+    """True if URL hostname is *domain* or a subdomain of it (not a substring spoof)."""
+    host = (urllib.parse.urlparse(str(url or "")).hostname or "").lower()
+    domain = str(domain or "").lower().lstrip(".")
+    if not host or not domain:
+        return False
+    return host == domain or host.endswith("." + domain)
+
+
 def reset_owned_tabs() -> None:
     """Test helper — clear process ownership."""
     with _lock:
