@@ -8,6 +8,19 @@ Latest always (GitHub):
   EXE:  https://github.com/ezixen/DistroKid-uploader/releases/latest/download/DistroKid-Uploader-exe.zip
   (Unpack → DistroKid-uploader\ folder is created for you.)
 
+WARNING — save upload-settings.txt before updating
+---------------------------------------------------
+Updating / re-unpacking a release OVERWRITES upload-settings.txt with the
+shipped defaults. Always copy your file somewhere safe first (e.g.
+upload-settings.MYBACKUP.txt), then after the update either:
+  • paste your values back over the new defaults, or
+  • keep the new file and add any missing keys / retype what you want.
+
+v1.5.7 updated the shipped defaults (identity, AI part-of-audio, credits,
+mandatory checkboxes, etc.). Future releases that change this file will
+warn again in the release notes and here — merge your custom settings
+manually each time.
+
 EASIEST (no install) — EXE
 --------------------------
 1. Unpack the ZIP → DistroKid-uploader\ folder appears
@@ -57,9 +70,13 @@ How filenames work
   number, artist, " - ", title, .wav
   Underscores in titles become ?
   Trailing "..." in titles is kept (e.g. yes, and...)
+  Parentheses versions: "song (edit)" → title "song", then DistroKid
+  "Add version info" → Other → type "edit" (not the Radio Edit preset).
+  DistroKid adds the brackets itself in the song-title preview.
 
 Cover: largest .jpg / .jpeg in the folder.
 Settings: edit upload-settings.txt (prices, AI, credits, Audiomack, etc.)
+  Before any update: backup that file — updates overwrite it (see WARNING above).
 
 More detail: README.md
 Playbook: docs\DISTROKID_UPLOAD.md

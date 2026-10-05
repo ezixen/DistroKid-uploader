@@ -1,6 +1,12 @@
 # DistroKid upload-settings.txt
 # Shipped defaults for ezixen releases (edit anytime; read on every run).
 #
+# WARNING: Updating / re-unpacking a release OVERWRITES this file.
+#   Backup first (e.g. upload-settings.MYBACKUP.txt), then merge your values
+#   back onto the new defaults, or retype what you want. New keys must be added
+#   by hand. v1.5.7 updated shipped defaults; future settings changes will warn
+#   again in release notes / how2use.txt / README.
+#
 # Template with all options + comments: upload-settings.example.txt
 # Lines starting with # are comments. Keys are case-insensitive.
 #

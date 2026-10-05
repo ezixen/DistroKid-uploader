@@ -19,6 +19,10 @@ Same folder / filename rules as [BandCamp-uploader](https://github.com/ezixen/Ba
 
 ## Option A — EXE (easiest, no install)
 
+> **WARNING — backup `upload-settings.txt` before updating.**  
+> Replacing / re-unpacking a release **overwrites** `upload-settings.txt` with the shipped defaults. Save a copy first, then after the update paste your values back or retype what you want over the new defaults.  
+> **v1.5.7** changed the shipped defaults (identity, AI part-of-audio, credits, mandatory checkboxes, …). Whenever this file changes in a future release, the release notes and this README will warn again — merge your custom settings manually.
+
 1. Unpack and open **`DistroKid-uploader/app/DistroKid-Uploader/`** (ZIP already contains the `DistroKid-uploader` folder)
 2. Edit **`upload-settings.txt`** beside the exe once (copy from `upload-settings.example.txt` if needed)
 3. Double-click **`DistroKid-Uploader.exe`**
@@ -73,15 +77,16 @@ On some Windows 11 PCs Explorer may still show a picker once; the `.bat` twins a
 
 Edit once (read every run):
 
-- Prices, releaser, real name, artist  
+- Prices, releaser, songwriter / artist  
 - Instrumental / explicit  
 - AI disclosure (`off` / `on` / `both` + DistroKid checkboxes)  
 - Apple Music credits (performer / producer)  
 - Audiomack (free) on/off  
 - Mandatory bottom checkboxes on/off  
 
-**Code defaults for new users:** AI off, explicit off, mandatory checkboxes off, Audiomack on.  
-Your personal file can override (e.g. AI part-of-audio + instruments).
+**Shipped defaults (v1.5.7+):** ezixen-oriented identity, instrumental on, AI part-of-audio + instruments, mandatory checkboxes on, Audiomack on. Edit the file beside the EXE to use your own values.
+
+**Updating:** see the WARNING above — the settings file is overwritten on each zip/EXE update when defaults change. Keep a backup and merge by hand.
 
 ---
 
@@ -101,6 +106,7 @@ The EXE asks for one path per line instead.
 
 - Album title, prices, largest jpg/jpeg cover  
 - Numbered `.wav` files in order, title-only (`01. Artist - title.wav`) — trailing `...` kept  
+- Parenthetical versions (`title (edit)`) → DistroKid **Other** version typebar (brackets stripped; DistroKid re-adds them)  
 - Free stores + socials; release date = today  
 - Songwriters (first/middle/last) + copy to all tracks (confirms DistroKid popups)  
 - Instrumental / explicit / AI disclosure (with modal Save)  

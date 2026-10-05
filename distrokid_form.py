@@ -105,6 +105,82 @@ def fill_track_song_title(cdp, track_index_1based: int, value: str) -> dict:
     return cdp.evaluate(js) or {"ok": False}
 
 
+def fill_track_version_info(cdp, track_index_1based: int, version: str) -> dict:
+    """
+    Fill DistroKid \"Add 'version' info to song title?\" for one track.
+
+    Always select **Other** (never the Radio Edit preset) and type the version
+    text into \"Please specify the version title\" — that is how custom tags
+    like edit / acoustic / radio edit from filename parentheses are entered.
+    DistroKid preview then shows: Title (version).
+    """
+    ver = (version or "").strip()
+    if not ver:
+        return {"ok": True, "skipped": True, "reason": "empty-version"}
+    js = f"""
+(() => {{
+  const i = {int(track_index_1based)};
+  const version = {json.dumps(ver)};
+  const titles = [...document.querySelectorAll('input[name^="title_"]')]
+    .filter(el => el.type !== 'hidden' && !/album/i.test(el.name+el.id));
+  const titleEl = titles[i-1];
+  if (!titleEl) return {{ok:false, reason:'title-missing', count: titles.length}};
+  const m = /^(?:title_)(.+)$/i.exec(titleEl.name || '');
+  const uuid = m ? m[1] : '';
+  const verName = uuid ? ('version_' + uuid) : '';
+  let radios = verName
+    ? [...document.querySelectorAll('input[type=radio][name="' + verName + '"]')]
+    : [];
+  if (!radios.length) {{
+    const byName = {{}};
+    for (const r of document.querySelectorAll('input[type=radio][name^="version_"]')) {{
+      (byName[r.name] = byName[r.name] || []).push(r);
+    }}
+    radios = Object.values(byName)[i-1] || [];
+  }}
+  if (!radios.length) return {{ok:false, reason:'version-radios-missing', uuid}};
+
+  const labelOf = (r) => (r.closest('label')?.innerText || r.parentElement?.innerText || r.value || '')
+    .replace(/\\s+/g, ' ').trim();
+
+  // Always Other + typebar (Radio Edit preset only inserts fixed \"Radio Edit\")
+  const other = radios.find(r => /^other/i.test((r.value||'').trim()) || /^other\\b/i.test(labelOf(r)));
+  if (!other) return {{ok:false, reason:'other-radio-missing', uuid}};
+  if (!other.checked) other.click();
+
+  let root = other.closest('div,fieldset,section,li') || document.body;
+  for (let up = 0; up < 10 && root; up++) {{
+    const txt = root.innerText || '';
+    if (/please specify the version title/i.test(txt)) break;
+    root = root.parentElement || root;
+  }}
+  const textEl = [...(root || document).querySelectorAll('input[type=text], textarea')].find(el => {{
+    if (el.type === 'hidden' || /^title_/i.test(el.name||'')) return false;
+    const ph = (el.placeholder || '').toLowerCase();
+    const near = ((el.closest('label')?.innerText || el.parentElement?.innerText || '')).toLowerCase();
+    return /extended remix|acoustic|specify the version|version title/i.test(ph + ' ' + near);
+  }});
+  if (!textEl) return {{ok:false, reason:'version-text-missing', uuid}};
+  textEl.scrollIntoView({{block:'center'}});
+  textEl.focus();
+  textEl.value = version;
+  textEl.dispatchEvent(new Event('input', {{bubbles:true}}));
+  textEl.dispatchEvent(new Event('change', {{bubbles:true}}));
+  textEl.blur();
+
+  return {{
+    ok: true,
+    track: i,
+    version,
+    uuid,
+    chosen: {{ok:true, via:'other', value: other.value||'', label: labelOf(other).slice(0,60)}},
+    typed: {{ok:true, value: textEl.value, placeholder: textEl.placeholder||''}},
+  }};
+}})()
+"""
+    return cdp.evaluate(js) or {"ok": False}
+
+
 def set_track_instrumental(cdp, track_index_1based: int, instrumental: bool) -> dict:
     js = f"""
 (() => {{

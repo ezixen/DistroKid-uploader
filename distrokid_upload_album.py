@@ -22,11 +22,13 @@ from album_media import (
     app_dir,
     largest_jpg,
     numbered_wavs,
+    title_and_version_from_filename,
     title_from_filename,
 )
 from distrokid_form import (
     fill_by_selector,
     fill_track_song_title,
+    fill_track_version_info,
     set_checkbox_near_label,
     set_song_count,
     set_track_instrumental,
@@ -148,7 +150,11 @@ def preview_folder(folder: Path) -> None:
         print(f"    producer_{i}={n[:1] + '…' if n else '(empty)'}", flush=True)
     print("Tracks:", len(wavs), flush=True)
     for w in wavs:
-        print(" ", w.name, "->", title_from_filename(w.name), flush=True)
+        base, ver = title_and_version_from_filename(w.name)
+        if ver:
+            print(f"  {w.name} -> title={base!r} version={ver!r}", flush=True)
+        else:
+            print(f"  {w.name} -> {base}", flush=True)
 
 
 def album_exists_on_distrokid(cdp: Cdp, album_title: str) -> dict:
@@ -285,9 +291,11 @@ def fill_release_form(cdp: Cdp, folder: Path) -> int:
         flush=True,
     )
     for i, wav in enumerate(wavs, start=1):
-        t = title_from_filename(wav.name)
-        print(f"Track {i}/{n_tracks}: title={t!r}", flush=True)
+        t, ver = title_and_version_from_filename(wav.name)
+        print(f"Track {i}/{n_tracks}: title={t!r}" + (f" version={ver!r}" if ver else ""), flush=True)
         print("  title:", fill_track_song_title(cdp, i, t), flush=True)
+        if ver:
+            print("  version:", fill_track_version_info(cdp, i, ver), flush=True)
         if s.instrumental:
             print("  instrumental:", set_track_instrumental(cdp, i, True), flush=True)
         print("  explicit:", set_explicit_lyrics(cdp, explicit=s.explicit, track_1based=i), flush=True)

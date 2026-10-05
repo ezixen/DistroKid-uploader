@@ -1,5 +1,10 @@
 # DistroKid upload-settings.txt (EXAMPLE / shipped defaults)
 #
+# WARNING: Updating / re-unpacking a release OVERWRITES upload-settings.txt.
+#   Backup your customized file first, then merge or retype after update.
+#   v1.5.7 updated shipped defaults; future settings changes will warn again
+#   in release notes / how2use.txt / README.
+#
 # Copy to upload-settings.txt next to the app if missing. Edit anytime.
 #   Copy-Item upload-settings.example.txt upload-settings.txt
 #

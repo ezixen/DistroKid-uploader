@@ -99,6 +99,9 @@ Latest always (GitHub):
   EXE pack: https://github.com/ezixen/DistroKid-uploader/releases/latest/download/DistroKid-Uploader-exe.zip
 
 1. Edit upload-settings.txt in this folder (once)
+   WARNING: before updating this app, BACK UP upload-settings.txt —
+   updates overwrite it with shipped defaults (v1.5.7+ and whenever
+   defaults change). Merge your values back by hand after update.
 2. Double-click DistroKid-Uploader.exe
 3. Log into DistroKid in the Chrome window that opens (once; 2FA if asked)
 4. Paste an album folder path, Enter — repeat for more albums

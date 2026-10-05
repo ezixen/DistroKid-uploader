@@ -44,6 +44,35 @@ def title_from_filename(name: str) -> str:
     return title.strip(" -")
 
 
+_PAREN_VERSION_RE = re.compile(r"\(([^()]+)\)")
+
+
+def split_title_and_version(title: str) -> tuple[str, str]:
+    """
+    DistroKid: parenthetical segments belong in \"Add version info to song title?\"
+    (stores add the parentheses). Return (base_title, version_text).
+
+    Example: \"moonlit (edit)\" -> (\"moonlit\", \"edit\")
+             \"song (live) (edit)\" -> (\"song\", \"live edit\")
+    Empty version means no parentheses found.
+    """
+    raw = (title or "").strip()
+    if not raw:
+        return "", ""
+    parts = [m.group(1).strip() for m in _PAREN_VERSION_RE.finditer(raw) if m.group(1).strip()]
+    if not parts:
+        return raw, ""
+    base = _PAREN_VERSION_RE.sub(" ", raw)
+    base = re.sub(r"\s{2,}", " ", base).strip(" -")
+    version = " ".join(parts)
+    return base, version
+
+
+def title_and_version_from_filename(name: str) -> tuple[str, str]:
+    """Filename -> DistroKid song title + optional version (no surrounding parentheses)."""
+    return split_title_and_version(title_from_filename(name))
+
+
 def album_title_from_folder(folder: Path) -> str:
     stem = folder.name
     if " - " in stem:

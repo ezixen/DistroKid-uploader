@@ -9,6 +9,7 @@
 - Numbered `.wav` only, numeric order  
 - Title-only track names (`01. ezixen - Song.wav` → `Song`)  
 - Trailing `...` in titles is **kept** (`yes, and....wav` → `yes, and...`)  
+- Parenthetical **version** tags (`Song (edit)` / `Song (radio edit)`) → DistroKid **song title** = `Song`, then **Add "version" info → Other** and type `edit` / `radio edit` in the typebar (never the Radio Edit preset — that only inserts fixed “Radio Edit”). DistroKid adds `(…)` in the preview itself.  
 - `_` in titles → `?`  
 - Largest `.jpg` / `.jpeg` cover  
 - Audio files are **queued quickly** into all track slots first (fire-and-forget — DistroKid uploads in the browser; we do **not** wait per-track). Titles/flags are filled **immediately after** the queue, while uploads may still run.  
@@ -18,6 +19,15 @@
 ## upload-settings.txt (one-time)
 
 Edit `upload-settings.txt` in the DistroKid-uploader folder (also copied beside the EXE). Read on every run.
+
+### WARNING — backup before every update
+
+Updating or re-unpacking a release **overwrites** `upload-settings.txt` with the shipped defaults.
+
+1. **Before updating:** copy your file (e.g. `upload-settings.MYBACKUP.txt`).  
+2. **After updating:** open the new shipped file, then either paste your old values back or retype the settings you want (and add any new keys the release introduced).  
+3. **v1.5.7:** shipped defaults were updated (identity, AI part-of-audio / instruments, numbered credits, mandatory checkboxes, …).  
+4. **Future releases:** whenever this file’s defaults or keys change, release notes + `how2use.txt` / README will warn again — merge manually each time.
 
 | Key | Meaning | New-user default | Notes |
 |---|---|---|---|
@@ -93,8 +103,8 @@ Before filling a new release, My Music is scanned for an exact album title.
 
 ### EXE
 
-1. Unpack release ZIP  
-2. Edit `upload-settings.txt`  
+1. Unpack release ZIP (if updating: backup `upload-settings.txt` first — it will be overwritten)  
+2. Edit `upload-settings.txt` (merge your backup if you just updated)  
 3. Run `app\DistroKid-Uploader\DistroKid-Uploader.exe`  
 4. Log in once → paste album paths → review in Chrome → you push  
 
