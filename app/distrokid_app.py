@@ -26,6 +26,11 @@ from album_media import (  # noqa: E402
     numbered_wavs,
     title_from_filename,
 )
+from app_banner import (  # noqa: E402
+    confirm_quit,
+    print_startup_banner,
+    read_display_version,
+)
 from chrome_debug import (  # noqa: E402
     chrome_data_root,
     chrome_profile_dir,
@@ -130,11 +135,15 @@ def main() -> int:
     roots = (app_dir(),)
     register_chrome_cleanup_on_exit(*roots)
     scrub_app_folder_side_effects(app_dir())
-    print("=== DistroKid Uploader (EXE / console) ===", flush=True)
-    print("Form fill only — you confirm / publish in DistroKid yourself.", flush=True)
-    print("If album already exists → WARNING and skip (no overwrite).", flush=True)
-    print(f"App folder: {app_dir()}", flush=True)
-    print(f"Chrome profile (login kept): {chrome_profile_dir()}", flush=True)
+    version = read_display_version(app_dir(), _ROOT, _HERE)
+    print_startup_banner(
+        "DistroKid Uploader",
+        version,
+        "Form fill only — you confirm / publish in DistroKid yourself.",
+        "If album already exists → WARNING and skip (no overwrite).",
+        f"App folder: {app_dir()}",
+        f"Chrome profile (login kept): {chrome_profile_dir()}",
+    )
     ensure_prices_file()
     find_chrome()
     ensure_debug_chrome()
@@ -144,6 +153,9 @@ def main() -> int:
     while True:
         folder = read_path()
         if folder is None:
+            if not confirm_quit():
+                print("Continuing — finish uploads / review, then quit when ready.", flush=True)
+                continue
             break
         if folder.name == "__retry__":
             continue

@@ -78,6 +78,7 @@ if (-not (Test-Path $iconFile)) { throw "Missing uploader.ico / images\uploader-
   --hidden-import distrokid_credits `
   --hidden-import upload_settings `
   --hidden-import cdp_owned_tab `
+  --hidden-import app_banner `
   $appPy
 
 if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed: $LASTEXITCODE" }
