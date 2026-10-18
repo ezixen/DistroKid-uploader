@@ -1,12 +1,16 @@
 DistroKid Uploader — how to use (short)
 =======================================
 
-Latest always (GitHub):
+Latest always (GitHub — please download only from here):
   https://github.com/ezixen/DistroKid-uploader
   https://github.com/ezixen/DistroKid-uploader/releases/latest
   ZIP:  https://github.com/ezixen/DistroKid-uploader/releases/latest/download/DistroKid-uploader.zip
   EXE:  https://github.com/ezixen/DistroKid-uploader/releases/latest/download/DistroKid-Uploader-exe.zip
   (Unpack → DistroKid-uploader\ folder is created for you.)
+
+Please get this uploader only from the official GitHub release page above.
+Copies from elsewhere may be outdated or altered — thank you for sticking
+to the official downloads!
 
 WARNING — save upload-settings.txt before updating
 ---------------------------------------------------

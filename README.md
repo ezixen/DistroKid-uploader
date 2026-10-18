@@ -7,6 +7,8 @@
 **GitHub (latest always):** https://github.com/ezixen/DistroKid-uploader  
 **[Latest release](https://github.com/ezixen/DistroKid-uploader/releases/latest)** · **[ZIP (scripts + EXE)](https://github.com/ezixen/DistroKid-uploader/releases/latest/download/DistroKid-uploader.zip)** · **[EXE only](https://github.com/ezixen/DistroKid-uploader/releases/latest/download/DistroKid-Uploader-exe.zip)**  
 
+Please download only from the official GitHub release above — thank you!
+
 Unpack either ZIP → you get a **`DistroKid-uploader/`** folder (no need to create one).
 
 ---

@@ -6,7 +6,16 @@ import re
 import sys
 from pathlib import Path
 
+from terminal_logo import print_logo, set_console_icon
+
 _FILEVERS_RE = re.compile(r"filevers=\((\d+),\s*(\d+),\s*(\d+),\s*(\d+)\)")
+
+# Official download homes (also printed every run).
+OFFICIAL_RELEASES = {
+    "BandCamp Uploader": "https://github.com/ezixen/BandCamp-uploader/releases/latest",
+    "DistroKid Uploader": "https://github.com/ezixen/DistroKid-uploader/releases/latest",
+    "DK-BC Uploader": "https://github.com/ezixen/DK-BC-Uploader/releases/latest",
+}
 
 
 def _from_version_info_text(text: str) -> str | None:
@@ -94,11 +103,25 @@ def set_console_title(title: str) -> None:
         pass
 
 
+def official_source_lines(product_name: str) -> list[str]:
+    url = OFFICIAL_RELEASES.get(product_name, "https://github.com/ezixen")
+    return [
+        "Please download this uploader only from the official GitHub release page —",
+        "that way you get the real build, not an old or altered copy. Thank you!",
+        f"  {url}",
+    ]
+
+
 def print_startup_banner(product_name: str, version: str, *extra_lines: str) -> None:
-    """Set console window title and print version at the top of the session."""
+    """Logo (sized to the window), title-bar icon, version header, source note."""
     title = f"{product_name} v{version}"
     set_console_title(title)
+    set_console_icon()
+    print_logo()
     print(f"=== {title} ===", flush=True)
+    for line in official_source_lines(product_name):
+        print(line, flush=True)
+    print(flush=True)
     for line in extra_lines:
         print(line, flush=True)
 

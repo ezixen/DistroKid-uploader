@@ -53,6 +53,9 @@ if (-not (Test-Path $versionFile)) { throw "Missing version_info.txt" }
 $iconFile = Join-Path $PSScriptRoot "uploader.ico"
 if (-not (Test-Path $iconFile)) { $iconFile = Join-Path $root "images\uploader-logo.ico" }
 if (-not (Test-Path $iconFile)) { throw "Missing uploader.ico / images\uploader-logo.ico" }
+$jpgFile = Join-Path $PSScriptRoot "uploader.jpg"
+if (-not (Test-Path $jpgFile)) { $jpgFile = Join-Path $root "uploader.jpg" }
+if (-not (Test-Path $jpgFile)) { throw "Missing uploader.jpg" }
 & $py -m PyInstaller `
   --noconfirm `
   --clean `
@@ -66,6 +69,8 @@ if (-not (Test-Path $iconFile)) { throw "Missing uploader.ico / images\uploader-
   --icon $iconFile `
   --add-data $addSettings `
   --add-data $addPrices `
+  --add-data "$iconFile;." `
+  --add-data "$jpgFile;." `
   --hidden-import websocket `
   --hidden-import chrome_debug `
   --hidden-import album_media `
@@ -79,6 +84,8 @@ if (-not (Test-Path $iconFile)) { throw "Missing uploader.ico / images\uploader-
   --hidden-import upload_settings `
   --hidden-import cdp_owned_tab `
   --hidden-import app_banner `
+  --hidden-import terminal_logo `
+  --hidden-import terminal_logo_data `
   $appPy
 
 if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed: $LASTEXITCODE" }
@@ -90,14 +97,19 @@ if (-not (Test-Path $outExe)) { throw "Missing $outExe" }
 Copy-Item $settings (Join-Path $built "upload-settings.txt") -Force
 Copy-Item $prices (Join-Path $built "prices.txt") -Force
 Copy-Item $disclaimer (Join-Path $built "disclaimer.txt") -Force
+Copy-Item $iconFile (Join-Path $built "uploader.ico") -Force
+Copy-Item $jpgFile (Join-Path $built "uploader.jpg") -Force
 @"
 DistroKid Uploader (EXE)
 =======================
 
-Latest always (GitHub):
+Latest always (GitHub — please download only from here):
   https://github.com/ezixen/DistroKid-uploader
   https://github.com/ezixen/DistroKid-uploader/releases/latest
   EXE pack: https://github.com/ezixen/DistroKid-uploader/releases/latest/download/DistroKid-Uploader-exe.zip
+
+Please get this app only from the official GitHub release above —
+copies from elsewhere may be outdated or altered. Thank you!
 
 1. Edit upload-settings.txt in this folder (once)
    WARNING: before updating this app, BACK UP upload-settings.txt —
@@ -112,7 +124,7 @@ Latest always (GitHub):
 Needs: Google Chrome installed.
 Edits: upload-settings.txt + prices.txt in this folder
 Chrome login: %LOCALAPPDATA%\DistroKid-Uploader\ (kept between runs; never beside this EXE)
-On quit: debug Chrome stops; caches/temp cleared; this folder stays deletable
+On quit: confirm first — debug Chrome stops; caches/temp cleared; this folder stays deletable
 "@ | Set-Content (Join-Path $built "HOW_TO_RUN.txt") -Encoding UTF8
 
 New-Item -ItemType Directory -Force -Path $final | Out-Null
@@ -122,6 +134,8 @@ Copy-Item (Join-Path $built "upload-settings.txt") (Join-Path $final "upload-set
 Copy-Item (Join-Path $built "prices.txt") (Join-Path $final "prices.txt") -Force
 Copy-Item (Join-Path $built "HOW_TO_RUN.txt") (Join-Path $final "HOW_TO_RUN.txt") -Force
 Copy-Item (Join-Path $built "disclaimer.txt") (Join-Path $final "disclaimer.txt") -Force
+Copy-Item $iconFile (Join-Path $final "uploader.ico") -Force
+Copy-Item $jpgFile (Join-Path $final "uploader.jpg") -Force
 
 # Authenticode sign as CN=ezixen (FileDescription already embeds GitHub URL via version_info.txt)
 . (Join-Path $PSScriptRoot "sign_exe.ps1")
