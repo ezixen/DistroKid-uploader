@@ -6,6 +6,7 @@ import re
 import sys
 from pathlib import Path
 
+from console_host import ensure_attached_console, set_app_user_model_id
 from terminal_logo import print_logo, set_console_icon
 
 _FILEVERS_RE = re.compile(r"filevers=\((\d+),\s*(\d+),\s*(\d+),\s*(\d+)\)")
@@ -114,6 +115,9 @@ def official_source_lines(product_name: str) -> list[str]:
 
 def print_startup_banner(product_name: str, version: str, *extra_lines: str) -> None:
     """Logo (sized to the window), title-bar icon, version header, source note."""
+    # Windowed EXE → AllocConsole so tab/taskbar use our icon, not cmd's C:\\ icon.
+    set_app_user_model_id(f"ezixen.{product_name.replace(' ', '')}")
+    ensure_attached_console()
     title = f"{product_name} v{version}"
     set_console_title(title)
     set_console_icon()

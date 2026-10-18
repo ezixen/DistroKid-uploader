@@ -59,7 +59,7 @@ if (-not (Test-Path $jpgFile)) { throw "Missing uploader.jpg" }
 & $py -m PyInstaller `
   --noconfirm `
   --clean `
-  --console `
+  --windowed `
   --name $distName `
   --paths $root `
   --distpath $outRoot `
@@ -84,8 +84,12 @@ if (-not (Test-Path $jpgFile)) { throw "Missing uploader.jpg" }
   --hidden-import upload_settings `
   --hidden-import cdp_owned_tab `
   --hidden-import app_banner `
+  --hidden-import console_host `
   --hidden-import terminal_logo `
   --hidden-import terminal_logo_data `
+  --hidden-import PIL `
+  --hidden-import PIL.Image `
+  --hidden-import PIL.JpegImagePlugin `
   $appPy
 
 if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed: $LASTEXITCODE" }
