@@ -53,22 +53,15 @@ def _packed_rgb() -> tuple[int, bytes] | None:
 
 
 def _jpeg_rgb(max_edge: int) -> tuple[int, int, bytes] | None:
-    """Load uploader.jpg via Pillow → RGB bytes (high quality LANCZOS)."""
+    """Load uploader.jpg via Windows GDI+ (no Pillow/numpy in the EXE)."""
     jpg = find_logo_file("uploader.jpg")
     if jpg is None:
         return None
     try:
-        from PIL import Image
+        from jpeg_win import load_jpeg_rgb
     except ImportError:
         return None
-    try:
-        img = Image.open(jpg).convert("RGB")
-        # Keep aspect; logo is square — fit inside max_edge
-        img.thumbnail((max_edge, max_edge), Image.Resampling.LANCZOS)
-        w, h = img.size
-        return w, h, img.tobytes()
-    except Exception:
-        return None
+    return load_jpeg_rgb(jpg, max_edge=max_edge)
 
 
 def _load_rgb_for_render(pix_w: int, pix_h: int) -> tuple[int, int, bytes] | None:
